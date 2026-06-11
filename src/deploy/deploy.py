@@ -12,6 +12,7 @@ import argparse
 import os
 import sys
 
+from azure.core.credentials import TokenCredential
 from azure.identity import AzureCliCredential, ClientSecretCredential
 from fabric_cicd import FabricWorkspace, publish_all_items, unpublish_all_orphan_items
 
@@ -25,7 +26,7 @@ ITEM_TYPES = [
 ]
 
 
-def build_credential(auth_mode: str):
+def build_credential(auth_mode: str) -> TokenCredential:
     if auth_mode == "secret":
         for var in ("AZURE_TENANT_ID", "AZURE_CLIENT_ID", "AZURE_CLIENT_SECRET"):
             if not os.environ.get(var):

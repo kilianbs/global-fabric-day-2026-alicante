@@ -2,6 +2,7 @@
 # 1) Activa el value set de la Variable Library según el entorno destino.
 # 2) find/replace residual: la conexión del modelo Direct Lake va incrustada
 #    por GUID en la definición y no puede resolverse con variables en runtime.
+# Para más entornos (p. ej. TEST), añade su clave bajo cada replace_value.
 
 key_value_replace:
   - find_key: $.activeValueSetName
