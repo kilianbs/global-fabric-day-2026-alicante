@@ -1,0 +1,76 @@
+# CD: se dispara al mergear a main y despliega al workspace Prod con fabric-cicd.
+# Variables esperadas (variable group "fabric-cicd-demo"):
+#   PROD_WORKSPACE_ID         GUID del workspace "GFD26 - Prod"
+#   AZURE_TENANT_ID           (solo variante "secret")
+#   AZURE_CLIENT_ID           (solo variante "secret")
+#   AZURE_CLIENT_SECRET       (solo variante "secret", marcada como secreta)
+# Variante federada: requiere la service connection "sc-fabric-cicd-demo"
+# (Workload Identity Federation) y authMode: federated.
+
+trigger:
+  branches:
+    include: [main]
+  paths:
+    include:
+      - workspace/**
+      - deploy/**
+
+parameters:
+  - name: authMode
+    displayName: Modo de autenticación
+    type: string
+    default: secret
+    values: [secret, federated]
+
+variables:
+  - group: fabric-cicd-demo
+
+stages:
+  - stage: DeployProd
+    displayName: Desplegar a Prod
+    jobs:
+      - deployment: fabric_prod
+        displayName: fabric-cicd -> GFD26 - Prod
+        environment: fabric-prod   # Environment de ADO con aprobación manual
+        pool:
+          vmImage: ubuntu-latest
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+
+                - task: UsePythonVersion@0
+                  inputs:
+                    versionSpec: "3.12"
+                  displayName: Python 3.12
+
+                - script: pip install -r deploy/requirements.txt
+                  displayName: Instalar fabric-cicd
+
+                # ── Variante A: Service Principal con secreto ──
+                - ${{ if eq(parameters.authMode, 'secret') }}:
+                    - script: >
+                        python deploy/deploy.py
+                        --workspace-id $(PROD_WORKSPACE_ID)
+                        --environment PROD
+                        --auth secret
+                      displayName: Desplegar (SP con secreto)
+                      env:
+                        AZURE_TENANT_ID: $(AZURE_TENANT_ID)
+                        AZURE_CLIENT_ID: $(AZURE_CLIENT_ID)
+                        AZURE_CLIENT_SECRET: $(AZURE_CLIENT_SECRET)
+
+                # ── Variante B: federada (Workload Identity) ──
+                - ${{ if eq(parameters.authMode, 'federated') }}:
+                    - task: AzureCLI@2
+                      displayName: Desplegar (SP federado)
+                      inputs:
+                        azureSubscription: sc-fabric-cicd-demo
+                        scriptType: bash
+                        scriptLocation: inlineScript
+                        inlineScript: >
+                          python deploy/deploy.py
+                          --workspace-id $(PROD_WORKSPACE_ID)
+                          --environment PROD
+                          --auth cli
