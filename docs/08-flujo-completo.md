@@ -13,7 +13,7 @@ Desde el workspace **GFD26 - Dev**, abre el panel de **Source control** y crea l
 Edita **DemoNotebook** para hacer un cambio que sea fácilmente comprobable en Prod. Por ejemplo:
 
 - Añade una columna calculada al dataframe: `df["precio_con_iva"] = df["precio"] * 1.21`
-- O modifica una medida DAX del modelo semántico DemoSemanticModel.
+- O modifica una medida DAX del modelo semántico DemoModel.
 
 Lo importante es que el cambio sea visible en el informe o en la salida del notebook, para que el público pueda verificar con sus propios ojos que lo que aprobaron en el pipeline llegó a Prod sin intervención manual.
 
