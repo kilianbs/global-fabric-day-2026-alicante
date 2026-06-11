@@ -6,6 +6,8 @@
 #   AZURE_CLIENT_SECRET       (solo variante "secret", marcada como secreta)
 # Variante federada: requiere la service connection "sc-fabric-cicd-demo"
 # (Workload Identity Federation) y authMode: federated.
+# Estructura esperada del repo de ADO: deploy/, pipelines/ y workspace/ en la raíz
+# (en este repo de GitHub viven bajo src/; cópialas a la raíz de tu repo).
 
 trigger:
   branches:

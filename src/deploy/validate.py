@@ -19,6 +19,8 @@ def validate_parameter_file() -> list[str]:
     if not param_file.exists():
         return [f"No existe {param_file}"]
     data = yaml.safe_load(param_file.read_text(encoding="utf-8"))
+    if not isinstance(data, dict):
+        return ["parameter.yml está vacío o no es un mapping YAML válido"]
     unknown = set(data) - ALLOWED_KEYS
     if unknown:
         errors.append(f"Claves no soportadas en parameter.yml: {sorted(unknown)}")

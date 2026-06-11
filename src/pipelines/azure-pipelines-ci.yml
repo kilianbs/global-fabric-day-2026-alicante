@@ -1,5 +1,7 @@
 # CI ligero: se ejecuta como build validation en los PR hacia main.
 # Configurar en: Repos > Branches > main > Branch policies > Build validation.
+# Estructura esperada del repo de ADO: deploy/, pipelines/ y workspace/ en la raíz
+# (en este repo de GitHub viven bajo src/; cópialas a la raíz de tu repo).
 trigger: none
 
 pool:
