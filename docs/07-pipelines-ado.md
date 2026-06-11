@@ -48,7 +48,7 @@ Repite el proceso pero seleccionando `pipelines/azure-pipelines-cd.yml`. Renómb
 
 La primera vez que el CD intente ejecutarse, ADO te pedirá que autorices el acceso al variable group `fabric-cicd-demo` y al environment `fabric-prod`. Haz clic en **Permit** para cada uno cuando aparezca la pantalla de autorización. Este paso solo ocurre una vez: a partir de ahí el pipeline tiene acceso permanente a esos recursos.
 
-> Si el pipeline falla antes de llegar al stage de despliegue con el mensaje "This pipeline needs permission to access a resource", es precisamente esta autorización la que falta (ver §5 de errores típicos).
+> Si el pipeline falla antes de llegar al stage de despliegue con el mensaje "This pipeline needs permission to access a resource", es precisamente esta autorización la que falta (ver la sección **Errores típicos** de este módulo).
 
 ## 4. Activar la build validation en main
 
