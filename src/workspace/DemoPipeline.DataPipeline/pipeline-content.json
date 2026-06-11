@@ -1,0 +1,24 @@
+{
+  "properties": {
+    "activities": [
+      {
+        "name": "Ejecutar DemoNotebook",
+        "type": "TridentNotebook",
+        "dependsOn": [],
+        "policy": {
+          "timeout": "0.01:00:00",
+          "retry": 0,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "typeProperties": {
+          "notebookId": "44444444-4444-4444-4444-444444444444",
+          "workspaceId": {
+            "value": "@pipeline().libraryVariables.DemoVariables.workspace_id",
+            "type": "Expression"
+          }
+        }
+      }
+    ]
+  }
+}
