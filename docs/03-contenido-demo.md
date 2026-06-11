@@ -1,17 +1,10 @@
 # Módulo 03 — Crear el contenido de la demo
 
-En este módulo construyes los seis ítems de Fabric que forman la demo. Créalos en el orden que se indica: cada uno depende del anterior. El diagrama muestra las relaciones:
+En este módulo construyes los seis ítems de Fabric que forman la demo. Créalos en el orden que se indica: el diagrama muestra el flujo de dependencias de izquierda a derecha, desde la configuración hasta los visuales finales:
 
 ```
-DemoReport
-    └─▶ DemoModel
-            └─▶ DemoLakehouse
-                    ▲
-              DemoNotebook
-                    ▲
-              DemoPipeline
-                    ▲
-              DemoVariables
+DemoVariables ──▶ DemoPipeline ──▶ DemoNotebook ──▶ DemoLakehouse ──▶ DemoModel ──▶ DemoReport
+ (config)         (orquesta)       (escribe)        (dim_customer)    (Direct Lake)  (visuales)
 ```
 
 DemoVariables alimenta a DemoPipeline con los GUIDs correctos según el entorno. DemoNotebook escribe la tabla `dim_customer` en DemoLakehouse. DemoModel y DemoReport consumen esa tabla.

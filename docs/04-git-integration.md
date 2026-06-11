@@ -18,7 +18,7 @@ El repositorio de GitHub que estás leyendo contiene los archivos de despliegue 
 
 ## 2. Conectar "GFD26 - Dev" a la rama dev
 
-Con el repositorio listo, ve al workspace **GFD26 - Dev** en Fabric. Haz clic en el nombre del workspace en la barra lateral, luego en **Workspace settings** (el icono de engranaje) y abre la pestaña **Git integration**.
+Con el repositorio listo, abre el workspace **GFD26 - Dev** y entra en **Workspace settings** (desde el icono de configuración o el menú "..." de la cabecera del workspace); ahí encontrarás la sección **Git integration**. La ubicación exacta puede variar ligeramente según la versión de la UI de Fabric.
 
 Rellena los campos del formulario de conexión:
 
@@ -51,7 +51,7 @@ Compara estas carpetas con `../src/workspace/` del repositorio de GitHub: son eq
 
 ## 4. Flujo branch-out (feature workspaces)
 
-Fabric permite crear un workspace temporal vinculado a una rama de feature en un solo gesto. Desde el workspace **GFD26 - Dev**, fíjate en la esquina inferior izquierda: aparece el nombre de la rama (`dev`) con un icono de ramificación. Haz clic en él y selecciona **Branch out to new workspace**.
+Fabric permite crear un workspace temporal vinculado a una rama de feature en un solo gesto. Desde el workspace **GFD26 - Dev**, fíjate en la barra de estado inferior del workspace: el nombre de la rama (`dev`) aparece junto a un icono de ramificación. Haz clic en él y selecciona **Branch out to new workspace**.
 
 Fabric te pedirá el nombre de la rama; escribe algo como `feature/prueba-notebook`. Automáticamente creará la rama en ADO a partir de `dev` y un workspace nuevo sincronizado con esa rama. Trabaja en ese workspace como si fuera tu entorno personal de desarrollo.
 
