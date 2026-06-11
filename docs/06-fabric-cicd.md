@@ -92,6 +92,8 @@ El `parameter.yml` del repo usa GUIDs de marcador. Antes de desplegar, sustitúy
 
 Los GUIDs aparecen en la URL cuando navegas al ítem correspondiente en `app.fabric.microsoft.com`.
 
+> Nota: el `notebookId` que verás en la definición de `DemoPipeline` no necesita regla en `parameter.yml` — fabric-cicd resuelve las referencias entre ítems del mismo despliegue automáticamente al publicar.
+
 ## Probar en local antes del pipeline
 
 Con Azure CLI instalado e iniciada sesión (`az login`), puedes desplegar directamente a Prod desde tu máquina para validar la configuración antes de montar el pipeline:
