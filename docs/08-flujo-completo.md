@@ -6,36 +6,36 @@ Ya está todo montado: los workspaces, la integración con Git, el Service Princ
 
 ### 1. Branch out
 
-Desde el workspace **GFD26 - Dev**, abre el panel de **Source control** y crea la rama `feature/demo-gfd` a partir de `dev`. Si tienes activada la opción de workspace aislado por rama, ADO creará automáticamente un workspace feature sincronizado con esa rama. Si no, puedes trabajar directamente en GFD26 - Dev apuntando a la nueva rama.
+Desde el workspace **GFD_DEV**, abre el panel de **Source control** y crea la rama `feature/demo-gfd` a partir de `dev`. Si tienes activada la opción de workspace aislado por rama, ADO creará automáticamente un workspace feature sincronizado con esa rama. Si no, puedes trabajar directamente en GFD_DEV apuntando a la nueva rama.
 
 ### 2. Cambio visible
 
-Edita **DemoNotebook** para hacer un cambio que sea fácilmente comprobable en Prod. Por ejemplo:
+Edita **NB_LoadTalks** para hacer un cambio que sea fácilmente comprobable en GFD_PRO. Por ejemplo:
 
 - Añade una columna calculada en la celda de limpieza del notebook, por ejemplo: `df = df.withColumn("ingestado_en", current_timestamp())` (importa `current_timestamp` de `pyspark.sql.functions`).
-- O modifica una medida DAX del modelo semántico DemoModel.
+- O añade una celda de print con un mensaje identificable.
 
-Lo importante es que el cambio sea visible en el informe o en la salida del notebook, para que el público pueda verificar con sus propios ojos que lo que aprobaron en el pipeline llegó a Prod sin intervención manual.
+Lo importante es que el cambio sea visible en el informe o en la salida del notebook, para que el público pueda verificar con sus propios ojos que lo que aprobaron en el pipeline llegó a GFD_PRO sin intervención manual.
 
-Una vez hecho el cambio, haz **commit** desde el workspace feature directamente (Source control > Commit). El commit queda en la rama `feature/demo-gfd` de Azure Repos.
+Una vez hecho el cambio, haz **commit** desde el workspace feature directamente (Source control > Commit) o desde VS Code. El commit queda en la rama `feature/demo-gfd` de Azure Repos.
 
 ### 3. PR feature → dev
 
-En Azure Repos, abre un **Pull Request** de `feature/demo-gfd` hacia `dev` y completa el merge. En esta transición no se ejecuta el CI (la build validation solo cubre `main`), así que el merge es inmediato. El objetivo de este paso es integrar el cambio en la rama `dev` antes de promoverlo.
+En Azure Repos, abre un **Pull Request** de `feature/demo-gfd` hacia `dev` y completa el merge. El objetivo de este paso es integrar el cambio en la rama `dev` antes de promoverlo.
 
-### 4. Update from Git en GFD26 - Dev
+### 4. Update from Git en GFD_DEV
 
-Vuelve al workspace **GFD26 - Dev** en Fabric y en el panel de Source control selecciona **Update from Git** (o *Sync*). El cambio del notebook aparece ahora en Dev. Este es el primer punto de verificación: el público puede abrir DemoNotebook en Dev y ver la columna nueva o la medida modificada.
+Vuelve al workspace **GFD_DEV** en Fabric y en el panel de Source control selecciona **Update from Git** (o *Sync*). El cambio del notebook aparece ahora en Dev. Este es el primer punto de verificación: el público puede abrir **NB_LoadTalks** en GFD_DEV y comprobar que el cambio está presente.
 
-### 5. PR dev → main
+### 5. PR dev → pro
 
-Abre un nuevo Pull Request de `dev` hacia `main` en Azure Repos. En cuanto se cree el PR, la **build validation** disparará el pipeline `CI - validacion` automáticamente. El CI instala `pyyaml` y ejecuta `deploy/validate.py` para comprobar que el `parameter.yml` y la estructura de ítems son correctos.
+Abre un nuevo Pull Request de `dev` hacia `pro` en Azure Repos. Este es el **evento de promoción**: indica que lo que hay en `dev` está listo para producción.
 
-Cuando el CI termina en verde, el PR está listo para hacer merge. Complétalo.
+Completa el merge.
 
 ### 6. El CD se dispara
 
-El merge a `main` activa el trigger del pipeline `CD - deploy prod` porque los archivos modificados están bajo `workspace/**` o `deploy/**`. El stage `DeployProd` arranca y, al llegar al job `fabric_prod`, ADO detecta que el environment `fabric-prod` tiene una regla de aprobación: el stage queda en estado **Waiting for approval**.
+El merge a `pro` activa el trigger del pipeline `deploy-to-fabric.yml` porque los archivos modificados están bajo `workspace/**` o `deploy/**`. El stage de despliegue arranca y, al llegar al job del environment `pro`, ADO detecta la regla de aprobación: el stage queda en estado **Waiting for approval**.
 
 **Este es el momento clave de la charla.** Muestra al público:
 
@@ -44,49 +44,38 @@ El merge a `main` activa el trigger del pipeline `CD - deploy prod` porque los a
 
 Aprueba el despliegue.
 
-### 7. fabric-cicd publica en Prod
+### 7. fabric-cicd publica en GFD_PRO
 
-Tras la aprobación, el job continúa. El script `deploy/deploy.py` se ejecuta con `--workspace-id $(PROD_WORKSPACE_ID) --environment PROD`. Durante el despliegue puedes ver en el log del pipeline:
+Tras la aprobación, el job continúa. El script de despliegue se ejecuta apuntando al workspace GFD_PRO. Durante el despliegue puedes ver en el log del pipeline los ítems publicados uno a uno (Lakehouse, Notebook, DataPipeline, SemanticModel, Report, VariableLibrary).
 
-- Los ítems publicados uno a uno (Lakehouse, Notebook, DataPipeline, SemanticModel, Report, VariableLibrary).
-- La sustitución del value set: fabric-cicd aplica `parameter.yml` y activa el value set `Prod` en DemoVariables.
-- Los GUIDs reescritos: los marcadores `00000000-...` y `11111111-...` del `parameter.yml` se sustituyen por los GUIDs reales del workspace y el lakehouse Prod (referencias dinámicas `$items.Lakehouse.DemoLakehouse.$id` y `$workspace.$id`).
+Los GUIDs del value set `pro` (`WORKSPACE_ID` y `LAKEHOUSE_ID`) los sustituye `parameter.yml` automáticamente en cada despliegue: toma los GUIDs del workspace y el lakehouse destino usando los tokens `$workspace.$id` e `$items.Lakehouse.LH_GlobalFabricDay.$id`. No hay que editarlos a mano. Ver módulo 06 para el detalle de cómo funciona este mecanismo.
 
-### 8. Verificar en Prod
+### 8. Verificar en GFD_PRO
 
-Abre el workspace **GFD26 - Prod** en Fabric. Ejecuta **DemoPipeline** (o abre el informe directamente) y comprueba que el cambio que hiciste en el paso 2 está presente. La columna calculada existe, la medida DAX devuelve el valor actualizado.
+Abre el workspace **GFD_PRO** en Fabric. Ejecuta **PL_Orquestador** (o abre el informe **RPT_GlobalFabricDay** directamente) y comprueba que el cambio que hiciste en el paso 2 está presente.
 
-Nadie ha tocado el workspace Prod a mano. Todo llegó a través del pipeline.
+Nadie ha tocado el workspace GFD_PRO a mano. Todo llegó a través del pipeline.
 
 ---
 
-## Primera ejecución: cerrar el círculo de la Variable Library
+## Otros caminos de la demo
 
-En el primer despliegue a Prod, **DemoLakehouse aún no existe en Prod** antes de que fabric-cicd lo publique. Esto significa que el value set `Prod` de `DemoVariables` tiene todavía los GUIDs de marcador vacíos (los que configuraste en el módulo 03).
+Para demostrar los otros caminos del módulo 07, puedes: (a) modificar un solo ítem y ejecutar el pipeline de cambios para ver cómo detecta solo ese ítem; (b) lanzar manualmente el pipeline selectivo con `NB_SetDefaultLakehouse.Notebook` para redesplegar un único notebook sin tocar el resto.
 
-Después de ese primer despliegue exitoso:
-
-1. Abre **GFD26 - Prod** y navega a DemoLakehouse. Copia su GUID de la URL (`app.fabric.microsoft.com/.../<guid>/...`).
-2. Copia también el GUID del workspace `GFD26 - Prod` de la URL del workspace.
-3. Vuelve a **GFD26 - Dev**, abre `DemoVariables` y edita el value set `Prod`: introduce los GUIDs reales del lakehouse y el workspace Prod.
-4. Haz commit desde Source control, abre un PR de `dev` → `main` y completa el flujo completo (CI + aprobación CD).
-
-A partir de ese segundo despliegue el value set `Prod` tiene valores reales y la Variable Library funciona correctamente en Prod.
-
-> **Nota sobre `find_replace`:** los GUIDs incrustados en las definiciones de ítems (por ejemplo la conexión Direct Lake del modelo semántico) los resuelve automáticamente `parameter.yml` mediante las referencias dinámicas `$items.Lakehouse.DemoLakehouse.$id` y `$workspace.$id`. El value set cubre las variables que el pipeline resuelve en runtime, no los GUIDs incrustados en las definiciones.
+---
 
 ## ✅ Checkpoint final
 
-- [ ] Un cambio nacido en una rama feature es visible en el informe de Prod tras aprobar el pipeline
-- [ ] Nadie ha tocado el workspace Prod a mano
+- [ ] Un cambio nacido en una rama feature es visible en GFD_PRO tras aprobar el pipeline
+- [ ] Nadie ha tocado el workspace GFD_PRO a mano
 
 ## Si algo falla en directo (plan B)
 
 | Síntoma | Causa probable | Qué hacer |
 | --- | --- | --- |
-| CI rojo en el PR | Error en `validate.py` (estructura de ítems o `parameter.yml` incorrecto) | Abrir el log del CI, leer el mensaje de error de `validate.py` y corregir el archivo señalado |
 | El CD no se dispara tras el merge | El path filter no coincide (los archivos modificados no están en `workspace/**` ni `deploy/**`) | Hacer un cambio mínimo en `workspace/` o `deploy/` y abrir otro PR |
-| Error 401 o 403 durante el despliegue | Credenciales del Service Principal incorrectas o permisos insuficientes en el workspace Prod | Revisar el módulo 05: client secret vigente, SP con rol Contributor en GFD26 - Prod |
-| Un ítem no aparece en Prod tras el despliegue | El tipo de ítem no está en `ITEM_TYPES` o falta la carpeta en `workspace/` | Revisar `ITEM_TYPES` en `deploy.py` y verificar el log de `publish_all_items` |
+| Error 401 o 403 durante el despliegue | Credenciales del Service Principal incorrectas o permisos insuficientes en el workspace GFD_PRO | Revisar el módulo 05: client secret vigente, SP con rol Contributor en GFD_PRO |
+| Un ítem no aparece en GFD_PRO tras el despliegue | El tipo de ítem no está en `ITEM_TYPES` o falta la carpeta en `workspace/` | Revisar `ITEM_TYPES` en `deploy.py` y verificar el log de `publish_all_items` |
+| El pipeline queda bloqueado en aprobación | El aprobador no recibió el correo | Buscar el pipeline en ADO y aprobar manualmente desde la pestaña Pipelines |
 
 ⬅️ [Módulo 07](07-pipelines-ado.md) · 🏠 [Inicio](../README.md)
