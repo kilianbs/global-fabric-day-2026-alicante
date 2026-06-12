@@ -1,99 +1,59 @@
+# Camino 1 — Deploy de todo (pipeline por defecto).
+# Cada cambio en la carpeta fabric/ de la rama pro dispara el pipeline
+# y despliega TODOS los items al workspace GFD_PRO.
 trigger:
   branches:
     include:
-    - pre
-    - main
+    - pro
   paths:
     include:
     - fabric/**
 
 parameters:
 - name: items_in_scope
-  displayName: Enter Fabric items to be deployed
+  displayName: Tipos de items de Fabric a desplegar
   type: string
   default: '["Lakehouse","VariableLibrary","Notebook","DataPipeline","SemanticModel","Report"]'
 
 variables:
   - group: fabric_cicd_group_sensitive
   - group: fabric_cicd_group_non_sensitive
-  - name: target_env
-    value: ${{ variables['Build.SourceBranchName'] }}
 
 stages:
-  - stage: DeployPre
-    displayName: "Deploy to PRE"
-    condition: eq(variables['Build.SourceBranchName'], 'pre')
-    jobs:
-      - deployment: Deployment
-        displayName: "Deploy Resources to PRE"
-        environment: pre
-        pool:
-          name: Azure Pipelines
-        strategy:
-          runOnce:
-            deploy:
-              steps:
-                # Step 1: Checkout the source code
-                - checkout: self
-                # Step 2: Set up Python 3.12
-                - task: UsePythonVersion@0
-                  inputs:
-                    versionSpec: '3.12'
-                    addToPath: true
-                  displayName: "Set up Python Environment"
-                # Step 3: Install dependencies
-                - script: |
-                    python -m pip install --upgrade pip
-                    pip install fabric-cicd 
-                  displayName: "Install Fabric CICD Library"
-                # Step 4: Run the deployment script
-                - task: PythonScript@0
-                  inputs:
-                    scriptSource: filePath
-                    scriptPath: '.deploy/deploy-to-fabric.py'
-                    arguments: >-
-                      --aztenantid $(pre-aztenantid)
-                      --azclientid $(pre-azclientid)
-                      --azspsecret $(pre-azspsecret)
-                      --items_in_scope "${{ parameters.items_in_scope }}"
-                      --target_env pre
-                  displayName: 'Deploy via fabric-cicd'
-
-  - stage: DeployMain
+  - stage: DeployPro
     displayName: "Deploy to PRO"
-    condition: eq(variables['Build.SourceBranchName'], 'main')
     jobs:
       - deployment: Deployment
         displayName: "Deploy Resources to PRO"
-        environment: main
+        environment: pro
         pool:
-          name: Azure Pipelines
+          vmImage: windows-latest
         strategy:
           runOnce:
             deploy:
               steps:
-                # Step 1: Checkout the source code
+                # Step 1: Checkout del codigo
                 - checkout: self
-                # Step 2: Set up Python 3.12
+                # Step 2: Python 3.12
                 - task: UsePythonVersion@0
                   inputs:
                     versionSpec: '3.12'
                     addToPath: true
                   displayName: "Set up Python Environment"
-                # Step 3: Install dependencies
+                # Step 3: Dependencias
                 - script: |
                     python -m pip install --upgrade pip
-                    pip install fabric-cicd 
+                    pip install fabric-cicd
                   displayName: "Install Fabric CICD Library"
-                # Step 4: Run the deployment script
+                # Step 4: Despliegue
                 - task: PythonScript@0
                   inputs:
                     scriptSource: filePath
-                    scriptPath: '.deploy/deploy-to-fabric.py'
+                    scriptPath: 'deploy/deploy-to-fabric.py'
                     arguments: >-
                       --aztenantid $(pro-aztenantid)
                       --azclientid $(pro-azclientid)
                       --azspsecret $(pro-azspsecret)
                       --items_in_scope "${{ parameters.items_in_scope }}"
-                      --target_env main
+                      --target_env pro
                   displayName: 'Deploy via fabric-cicd'
