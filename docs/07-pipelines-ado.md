@@ -1,100 +1,148 @@
 # Módulo 07 — Pipelines de Azure DevOps
 
-En este módulo configuras los dos pipelines de Azure DevOps que automatizan la validación y el despliegue de la demo. Al terminar, cada PR hacia `main` ejecutará el CI automáticamente, y cada merge a `main` lanzará el CD que espera tu aprobación antes de publicar en Prod.
+En este módulo configuras los pipelines de Azure DevOps que automatizan el despliegue de los ítems de Fabric al workspace `GFD_PRO`. Hay tres caminos según el escenario: desplegar todo, desplegar solo lo que cambió, o desplegar ítems concretos. Todos comparten la misma preparación previa.
 
-## 1. Variable group
+## 1. Preparación común
 
-El pipeline CD necesita acceder a varios secretos y configuraciones que no deben estar en el código. Para ello usarás un **Variable group** en ADO.
+Antes de registrar cualquier pipeline hay que crear los variable groups y el environment en ADO.
 
-Ve a **Pipelines > Library > Variable groups** y crea uno nuevo con el nombre exacto `fabric-cicd-demo`. Añade las siguientes variables:
+### 1a. Variable groups (Library > + Variable group)
+
+Los pipelines leen la configuración a través de dos variable groups. Los nombres son exactos; el script Python los busca por ese nombre.
+
+**Variable group `fabric_cicd_group_sensitive`**
+
+Ve a **Pipelines > Library > Variable groups** y crea un nuevo group con ese nombre exacto. Añade estas tres variables:
 
 | Variable | Descripción | ¿Secreta? |
 | --- | --- | --- |
-| `PROD_WORKSPACE_ID` | GUID del workspace `GFD26 - Prod` | No |
-| `AZURE_TENANT_ID` | ID del tenant de Entra ID (solo variante `secret`) | No |
-| `AZURE_CLIENT_ID` | Client ID de la app registration (solo variante `secret`) | No |
-| `AZURE_CLIENT_SECRET` | Client secret de la app registration (solo variante `secret`) | **Sí — marcarla con el candado** |
+| `pro-aztenantid` | GUID del tenant de Azure | No |
+| `pro-azclientid` | Application (client) ID del Service Principal | No |
+| `pro-azspsecret` | Valor del secreto del Service Principal | **Sí 🔒** |
 
-Para marcar `AZURE_CLIENT_SECRET` como secreta, haz clic en el icono del candado que aparece a la derecha del campo de valor. ADO la enmascarará en los logs y la tratará como dato sensible.
+Para marcar `pro-azspsecret` como secreta, haz clic en el icono del candado a la derecha del campo de valor. ADO la enmascarará en los logs y la tratará como dato sensible.
 
-> Los valores de `AZURE_TENANT_ID`, `AZURE_CLIENT_ID` y `AZURE_CLIENT_SECRET` son los mismos que configuraste en el módulo 05 al crear la app registration. Si usas la variante federada (ver §5), solo necesitas `PROD_WORKSPACE_ID`.
+**Variable group `fabric_cicd_group_non_sensitive`**
 
-## 2. Environment con aprobación
+Crea un segundo group con ese nombre exacto. Añade estas dos variables:
 
-El CD despliega a través de un **Environment** de ADO, que permite bloquear la ejecución hasta que una persona apruebe manualmente. Así nadie puede publicar en Prod por accidente.
+| Variable | Valor | ¿Secreta? |
+| --- | --- | --- |
+| `proWorkspaceName` | `GFD_PRO` | No |
+| `gitDirectory` | `fabric` | No |
 
-Ve a **Pipelines > Environments > New environment**, nómbralo `fabric-prod` y selecciona el tipo *None* (no necesita recursos de Kubernetes ni VMs). Una vez creado:
+> **¿Por qué estos nombres?** El script Python lee `os.environ["PROWORKSPACENAME"]` (ADO expone las variables en mayúsculas) para determinar el workspace destino. La variable `gitDirectory` le dice en qué carpeta del repo buscar los ítems de Fabric.
+
+### 1b. Environment `pro` con aprobación manual
+
+Ve a **Pipelines > Environments > New environment**, nómbralo `pro` y selecciona el tipo *None*. Una vez creado:
 
 1. Entra en el environment recién creado y abre **Approvals and checks**.
-2. Haz clic en el `+` para añadir un check y selecciona **Approvals**.
-3. Añádete a ti mismo como aprobador (puedes añadir otras personas del equipo si lo necesitas).
-4. Guarda. A partir de ahora el stage `DeployProd` del CD quedará pausado en el estado *Waiting for approval* hasta que alguien del grupo aprobador confirme.
+2. Haz clic en el `+` y selecciona **Approvals**.
+3. Añádete como aprobador (puedes añadir más personas si lo necesitas).
+4. Guarda.
 
-Este es el momento de la charla donde el público verá el correo y la pantalla de aprobación.
+A partir de ahora el stage de despliegue quedará pausado en el estado *Waiting for approval* hasta que alguien del grupo aprobador lo confirme. Este es el momento de la demo donde el público verá el botón **Approve** en pantalla.
 
-## 3. Crear los dos pipelines
+## 2. Los tres caminos de despliegue
 
-Los archivos YAML ya están en el repositorio bajo `pipelines/`. Solo necesitas registrarlos en ADO.
+Los tres pipelines despliegan al mismo workspace (`GFD_PRO`) y comparten los variable groups anteriores. La diferencia está en cuándo se ejecutan y qué ítems despliegan.
 
-**Pipeline CI — "CI - validacion"**
+### Camino 1 — Deploy de todo (pipeline por defecto)
 
-Ve a **Pipelines > New pipeline**, selecciona **Azure Repos Git**, elige tu repositorio y luego **Existing Azure Pipelines YAML file**. Selecciona la ruta `pipelines/azure-pipelines-ci.yml` y finaliza la creación. Renombra el pipeline a `CI - validacion` desde el menú de opciones del pipeline (los tres puntos en la lista de pipelines).
-
-**Pipeline CD — "CD - deploy prod"**
-
-Repite el proceso pero seleccionando `pipelines/azure-pipelines-cd.yml`. Renómbralo a `CD - deploy prod`.
-
-**Primer run del CD y autorizaciones**
-
-La primera vez que el CD intente ejecutarse, ADO te pedirá que autorices el acceso al variable group `fabric-cicd-demo` y al environment `fabric-prod`. Haz clic en **Permit** para cada uno cuando aparezca la pantalla de autorización. Este paso solo ocurre una vez: a partir de ahí el pipeline tiene acceso permanente a esos recursos.
-
-> Si el pipeline falla antes de llegar al stage de despliegue con el mensaje "This pipeline needs permission to access a resource", es precisamente esta autorización la que falta (ver la sección **Errores típicos** de este módulo).
-
-## 4. Activar la build validation en main
-
-Con el CI creado, vuelve a lo que viste en el módulo 04 §5 para terminar de conectar las piezas.
-
-Ve a **Repos > Branches**, busca la rama `main` y abre sus **Branch policies**. En la sección **Build validation** añade una nueva regla:
-
-- **Build pipeline**: selecciona `CI - validacion`
-- **Trigger**: Automatic
-- **Policy requirement**: Required
-
-A partir de este momento, cualquier PR cuya rama base sea `main` disparará automáticamente el CI. El PR no podrá completarse hasta que el pipeline termine en verde.
-
-> Recuerda que `azure-pipelines-ci.yml` tiene `trigger: none`, lo que significa que **solo** se ejecuta como build validation, nunca por push directo. Es el comportamiento correcto: el CI es exclusivo de los PRs.
-
-## 5. Las dos variantes de auth en el YAML
-
-El CD tiene un parámetro `authMode` que acepta dos valores: `secret` y `federated`. El valor por defecto es `secret`.
-
-**Variante A — `secret` (Service Principal con client secret)**
-
-Usa las variables `AZURE_TENANT_ID`, `AZURE_CLIENT_ID` y `AZURE_CLIENT_SECRET` del variable group para autenticarse directamente contra la API de Fabric. Es la opción más sencilla de configurar y funciona en cualquier tenant sin configuración adicional en ADO. El script `deploy.py` se invoca con `--auth secret`.
-
-**Variante B — `federated` (Workload Identity Federation)**
-
-Usa la service connection `sc-fabric-cicd-demo` que configuraste en el módulo 05 §3 con Workload Identity Federation. En este caso no hay secreto que rotar: ADO genera un token de corta duración en cada ejecución. El step usa la tarea `AzureCLI@2` con `azureSubscription: sc-fabric-cicd-demo`, que inyecta las credenciales en la sesión de Azure CLI; el script `deploy.py` recibe `--auth cli` y las consume de ahí.
-
-Para cambiar la variante en una ejecución manual ve al botón **Run pipeline** del CD y modifica el parámetro `authMode` en el panel lateral. Si quieres cambiar el valor por defecto de forma permanente, edita el campo `default` en el YAML.
-
-| Variante | Cuándo usarla |
+| | |
 | --- | --- |
-| `secret` | Configuración rápida, tenant sin Workload Identity Federation configurado |
-| `federated` | Entornos de producción donde no quieres gestionar la rotación de secretos |
+| **YAML** | `pipelines/deploy-to-fabric.yml` |
+| **Script** | `deploy/deploy-to-fabric.py` |
+| **Trigger** | Automático: push o merge a la rama `pro` con cambios en `fabric/**` |
+| **Qué despliega** | Todos los ítems del directorio `fabric/` |
+
+**Cuándo usarlo:** primera puesta en marcha, cuando hay muchos cambios acumulados, o cuando se quiere la seguridad de que el workspace queda exactamente igual que el repo. Es el enfoque más simple y predecible.
+
+**Cómo registrarlo en ADO:**
+
+Ve a **Pipelines > New pipeline > Azure Repos Git**, elige el repositorio `Global Fabric Day` y selecciona **Existing Azure Pipelines YAML file**. En la rama `pro`, introduce la ruta `pipelines/deploy-to-fabric.yml` y finaliza la creación.
+
+> Este es el pipeline que se deja habilitado para la demo.
+
+---
+
+### Camino 2 — Deploy de cambios
+
+| | |
+| --- | --- |
+| **YAML** | `pipelines/deploy-to-fabric-changes.yml` |
+| **Script** | `deploy/deploy-to-fabric-changes.py` |
+| **Trigger** | Automático: push o merge a la rama `pro` con cambios en `fabric/**` |
+| **Qué despliega** | Solo los ítems con diferencias respecto al commit anterior (`HEAD~1`) |
+
+**Cuándo usarlo:** repos grandes o equipos con despliegues frecuentes donde redesplegar todo en cada push no es práctico. El script compara el estado actual con `HEAD~1` y solo envía a Fabric los ítems que cambiaron.
+
+**Advertencia:** este pipeline requiere activar feature flags experimentales de `fabric-cicd` (`enable_experimental_features` y `enable_items_to_include`). Si un ítem modificado tiene dependencias con otros ítems que no se están desplegando en esa ejecución, pueden aparecer errores de referencia.
+
+El parámetro `force_full_deploy` permite forzar un despliegue completo cuando sea necesario, sin cambiar el YAML.
+
+**Nota para la demo:** el Camino 1 y el Camino 2 tienen el mismo trigger automático. Si registras ambos pipelines y los dejas habilitados, los dos dispararán en paralelo al mismo push. Recomendación: mantener solo uno habilitado en cada momento (**Pipeline > ... > Settings > Trigger disabled** para el que no se use).
+
+**Cómo registrarlo en ADO:**
+
+Mismo proceso que el Camino 1 pero con la ruta `pipelines/deploy-to-fabric-changes.yml`.
+
+---
+
+### Camino 3 — Deploy selectivo
+
+| | |
+| --- | --- |
+| **YAML** | `pipelines/deploy-to-fabric-selected-items.yml` |
+| **Script** | `deploy/deploy-to-fabric-selective.py` |
+| **Trigger** | `trigger: none` — solo manual desde la interfaz de ADO |
+| **Qué despliega** | Los ítems especificados por nombre en el parámetro `items_to_deploy` |
+
+**Cuándo usarlo:** hotfixes urgentes o cuando se sabe exactamente qué ítem hay que redesplegar sin tocar el resto del workspace.
+
+**Cómo ejecutarlo:** ve al pipeline en ADO y haz clic en **Run pipeline**. En el panel lateral aparece el parámetro `items_to_deploy`: introduce los nombres de los ítems separados por comas en formato `Nombre.Tipo`. Por ejemplo:
+
+```
+NB_SetDefaultLakehouse.Notebook, RPT_GlobalFabricDay.Report
+```
+
+**Cómo registrarlo en ADO:**
+
+Mismo proceso que los anteriores pero con la ruta `pipelines/deploy-to-fabric-selected-items.yml`.
+
+---
+
+### Tabla resumen
+
+| Camino | Fichero | Trigger | Qué despliega |
+| --- | --- | --- | --- |
+| Deploy de todo | `pipelines/deploy-to-fabric.yml` | Automático (push a `pro` con cambios en `fabric/**`) | Todos los ítems |
+| Deploy de cambios | `pipelines/deploy-to-fabric-changes.yml` | Automático (mismo) | Solo ítems con diff vs último commit |
+| Deploy selectivo | `pipelines/deploy-to-fabric-selected-items.yml` | Manual | Ítems especificados por nombre |
+
+## 3. Build validation sobre `pro` (opcional)
+
+La rama `pro` puede tener una política de PR que exija revisión y aprobación antes de que un merge se complete. Esta configuración es independiente de los pipelines de despliegue: se gestiona desde **Repos > Branches > Branch policies** de la rama `pro`.
+
+No hay pipeline de CI de validación en este proyecto; la única automatización de calidad que se puede añadir es la aprobación humana en el PR.
 
 ## ✅ Checkpoint
 
-- [ ] Un PR de prueba hacia `main` ejecuta el CI automáticamente
-- [ ] El CD aparece en Pipelines y tiene acceso al variable group y al environment
+- [ ] Variable group `fabric_cicd_group_sensitive` creado con `pro-aztenantid`, `pro-azclientid` y `pro-azspsecret` (esta última marcada como secreta)
+- [ ] Variable group `fabric_cicd_group_non_sensitive` creado con `proWorkspaceName = GFD_PRO` y `gitDirectory = fabric`
+- [ ] Environment `pro` creado con al menos un aprobador configurado
+- [ ] Los tres pipelines registrados en ADO
+- [ ] Pipeline por defecto (`deploy-to-fabric.yml`) verificado: al hacer un push de prueba a `pro` con un cambio en `fabric/`, el pipeline dispara y se detiene pidiendo aprobación en el environment `pro`
 
 ## Errores típicos
 
 | Síntoma | Causa | Solución |
 | --- | --- | --- |
-| "This pipeline needs permission to access a resource" o "could not access variable group" | El variable group `fabric-cicd-demo` o el environment `fabric-prod` no han sido autorizados | Abrir el pipeline pausado y hacer clic en **Permit** para cada recurso |
-| El CD no se dispara al mergear a `main` | El path filter del trigger no coincide con los archivos cambiados | Verificar que los cambios están en `workspace/**` o `deploy/**`; los cambios en otras rutas (p. ej. `docs/`) no disparan el CD |
-| El CI no se ejecuta en el PR | La build validation no está configurada en las branch policies de `main` | Seguir el paso §4 de este módulo |
-| El CI falla con `ModuleNotFoundError: No module named 'yaml'` | `pyyaml` no se instaló antes de ejecutar `validate.py` | El YAML del CI instala `pyyaml` explícitamente; verificar que el step de instalación no se saltó |
+| "This pipeline needs permission to access a resource" o "could not access variable group" | Los variable groups o el environment `pro` no han sido autorizados en el primer run | Abrir el pipeline pausado y hacer clic en **Permit** para cada recurso |
+| El pipeline no se dispara al mergear a `pro` | El path filter del trigger no coincide con los archivos cambiados | Verificar que los cambios están en `fabric/**`; cambios en otras rutas (p. ej. `docs/`) no disparan el pipeline |
+| El Camino 2 falla con un error de referencia a un ítem | Un ítem modificado depende de otro no incluido en el despliegue diferencial | Usar el parámetro `force_full_deploy` o cambiar al Camino 1 para esa ejecución |
+| Los dos pipelines automáticos disparan a la vez | Camino 1 y Camino 2 tienen el mismo trigger y están ambos habilitados | Deshabilitar el trigger del pipeline que no se usa en ese momento (Pipeline > Settings > Trigger disabled) |
+| El Camino 3 no aparece en la lista de runs automáticos | Es correcto: `trigger: none` significa que solo se ejecuta manualmente | Ejecutarlo desde **Run pipeline** en la interfaz de ADO |
 
 ⬅️ [Módulo 06](06-fabric-cicd.md) · ➡️ [Módulo 08 — Flujo completo](08-flujo-completo.md)
