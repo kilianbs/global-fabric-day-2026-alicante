@@ -1,0 +1,11 @@
+expression 'DirectLake - LH_GlobalFabricDay' =
+		let
+		    Source = AzureStorage.DataLake("https://onelake.dfs.fabric.microsoft.com/6b2d8c5d-8eb6-4b89-8f9e-5cfc82bdf2bb/1546a512-5301-4200-a7e8-774ac7cba230", [HierarchicalNavigation=true])
+		in
+		    Source
+	lineageTag: 154bf9d1-57cc-4c6c-97d7-101e1e90beed
+
+	annotation PBI_IncludeFutureArtifacts = False
+
+	annotation PBI_RemovedChildren = [{"remoteItemId":{"analysisServicesObject":{"sourceName":null,"sourceLineageTag":"[dbo].[raw_talks]"}},"objectType":"Table"}]
+

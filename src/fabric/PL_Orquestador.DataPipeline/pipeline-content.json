@@ -1,0 +1,129 @@
+{
+  "properties": {
+    "activities": [
+      {
+        "type": "TridentNotebook",
+        "typeProperties": {
+          "notebookId": "c2aaf937-60e5-a2be-4c59-52dfe278c94e",
+          "workspaceId": "00000000-0000-0000-0000-000000000000",
+          "parameters": {
+            "FABRIC_ENV": {
+              "value": {
+                "value": "@pipeline().libraryVariables.FABRIC_ENV",
+                "type": "Expression"
+              },
+              "type": "string"
+            },
+            "WORKSPACE_ID": {
+              "value": {
+                "value": "@pipeline().libraryVariables.WORKSPACE_ID",
+                "type": "Expression"
+              },
+              "type": "string"
+            },
+            "LAKEHOUSE_ID": {
+              "value": {
+                "value": "@pipeline().libraryVariables.LAKEHOUSE_ID",
+                "type": "Expression"
+              },
+              "type": "string"
+            },
+            "LAKEHOUSE_NAME": {
+              "value": {
+                "value": "@pipeline().libraryVariables.LAKEHOUSE_NAME",
+                "type": "Expression"
+              },
+              "type": "string"
+            }
+          },
+          "sessionTag": "global_fabric_day"
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "LoadTalks",
+        "dependsOn": []
+      },
+      {
+        "type": "TridentNotebook",
+        "typeProperties": {
+          "notebookId": "60683c16-7e4c-a899-4bb8-4e2559426fc8",
+          "workspaceId": "00000000-0000-0000-0000-000000000000",
+          "parameters": {
+            "FABRIC_ENV": {
+              "value": {
+                "value": "@pipeline().libraryVariables.FABRIC_ENV",
+                "type": "Expression"
+              },
+              "type": "string"
+            },
+            "WORKSPACE_ID": {
+              "value": {
+                "value": "@pipeline().libraryVariables.WORKSPACE_ID",
+                "type": "Expression"
+              },
+              "type": "string"
+            },
+            "LAKEHOUSE_ID": {
+              "value": {
+                "value": "@pipeline().libraryVariables.LAKEHOUSE_ID",
+                "type": "Expression"
+              },
+              "type": "string"
+            },
+            "LAKEHOUSE_NAME": {
+              "value": {
+                "value": "@pipeline().libraryVariables.LAKEHOUSE_NAME",
+                "type": "Expression"
+              },
+              "type": "string"
+            }
+          },
+          "sessionTag": "global_fabric_day"
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "ProcessTalks",
+        "dependsOn": [
+          {
+            "activity": "LoadTalks",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      }
+    ],
+    "libraryVariables": {
+      "LAKEHOUSE_ID": {
+        "type": "String",
+        "variableName": "LAKEHOUSE_ID",
+        "libraryName": "VL_GlobalFabricDay"
+      },
+      "WORKSPACE_ID": {
+        "type": "String",
+        "variableName": "WORKSPACE_ID",
+        "libraryName": "VL_GlobalFabricDay"
+      },
+      "LAKEHOUSE_NAME": {
+        "type": "String",
+        "variableName": "LAKEHOUSE_NAME",
+        "libraryName": "VL_GlobalFabricDay"
+      },
+      "FABRIC_ENV": {
+        "type": "String",
+        "variableName": "FABRIC_ENV",
+        "libraryName": "VL_GlobalFabricDay"
+      }
+    }
+  }
+}

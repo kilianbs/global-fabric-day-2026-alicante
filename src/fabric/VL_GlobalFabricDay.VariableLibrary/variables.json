@@ -1,0 +1,29 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/variableLibrary/definition/variables/1.0.0/schema.json",
+  "variables": [
+    {
+      "name": "LAKEHOUSE_ID",
+      "note": "",
+      "type": "String",
+      "value": "1546a512-5301-4200-a7e8-774ac7cba230"
+    },
+    {
+      "name": "WORKSPACE_ID",
+      "note": "",
+      "type": "String",
+      "value": "6b2d8c5d-8eb6-4b89-8f9e-5cfc82bdf2bb"
+    },
+    {
+      "name": "LAKEHOUSE_NAME",
+      "note": "",
+      "type": "String",
+      "value": "LH_GlobalFabricDay"
+    },
+    {
+      "name": "FABRIC_ENV",
+      "note": "",
+      "type": "String",
+      "value": "DEV"
+    }
+  ]
+}

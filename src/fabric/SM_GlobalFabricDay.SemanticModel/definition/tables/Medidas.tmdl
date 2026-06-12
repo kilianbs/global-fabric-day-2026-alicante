@@ -1,0 +1,47 @@
+table Medidas
+	lineageTag: 3a0e45a3-6498-4a79-b490-bbae8bb0b978
+
+	measure 'Duración Media' = AVERAGE(talks[duration_min])
+		lineageTag: e8b2c2bc-95cf-4873-aad8-346b5374637a
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Entorno Activo' = MAX(talks[processed_env])
+		lineageTag: d5074848-238c-4d8c-9048-1fdeee463f11
+
+	measure 'Minutos Contenido' = SUM(talks[duration_min])
+		formatString: 0
+		lineageTag: 4b3875fe-8a9e-4a3d-b5bb-fcde1177ee5f
+
+	measure 'Total Charlas' = COUNTROWS(talks)
+		formatString: 0
+		lineageTag: 1435afed-1823-443d-bf8b-c4a3c9881b7f
+
+	measure 'Total Ponentes' = SUM(talks[speaker_count])
+		formatString: 0
+		lineageTag: eb40ea2b-08a3-47cc-8707-2f4625141d95
+
+	column Column
+		isHidden
+		formatString: 0
+		lineageTag: ac2eb18c-d283-4453-ad75-0767c336dad6
+		summarizeBy: sum
+		isNameInferred
+		sourceColumn: [Column]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Medidas = calculated
+		mode: import
+		source = Row("Column", BLANK())
+
+	annotation PBI_Id = b95569493e744e949933d5d6a798f0a7
+
+	annotation 436ba87b-9c83-4389-a31b-ebd06a36be98 = {"Expression":"{}"}
+
+	annotation 277cc1b9-af89-4597-8e15-cacc25c0886b = ```
+			An Evaluate statement cannot return a table without columns.
+			{"RootActivityId":"A593686C-7E94-4419-81E3-27A295C5AC63"}
+			
+			```
+

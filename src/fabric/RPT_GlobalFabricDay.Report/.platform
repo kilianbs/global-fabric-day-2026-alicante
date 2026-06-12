@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Report",
+    "displayName": "RPT_GlobalFabricDay"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "cbe7fcaa-fef1-8255-4e9c-669622de18d5"
+  }
+}

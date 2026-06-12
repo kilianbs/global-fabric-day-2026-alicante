@@ -1,0 +1,112 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.10.0/schema.json",
+  "name": "d63d0f2c57002a7c2808",
+  "position": {
+    "x": 0,
+    "y": 0,
+    "z": 0,
+    "height": 138.92999510455275,
+    "width": 1280.447583747115,
+    "tabOrder": 0
+  },
+  "visual": {
+    "visualType": "cardVisual",
+    "query": {
+      "queryState": {
+        "Data": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Medidas"
+                    }
+                  },
+                  "Property": "Entorno Activo"
+                }
+              },
+              "queryRef": "Medidas.Entorno Activo",
+              "nativeQueryRef": "Entorno Activo"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Medidas"
+                    }
+                  },
+                  "Property": "Total Ponentes"
+                }
+              },
+              "queryRef": "Medidas.Total Ponentes",
+              "nativeQueryRef": "Total Ponentes"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Medidas"
+                    }
+                  },
+                  "Property": "Total Charlas"
+                }
+              },
+              "queryRef": "Medidas.Total Charlas",
+              "nativeQueryRef": "Total Charlas"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Medidas"
+                    }
+                  },
+                  "Property": "Minutos Contenido"
+                }
+              },
+              "queryRef": "Medidas.Minutos Contenido",
+              "nativeQueryRef": "Minutos Contenido"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Medidas"
+                    }
+                  },
+                  "Property": "Duración Media"
+                }
+              },
+              "queryRef": "Medidas.Duración Media",
+              "nativeQueryRef": "Duración Media"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Medidas"
+                  }
+                },
+                "Property": "Entorno Activo"
+              }
+            },
+            "direction": "Ascending"
+          }
+        ],
+        "isDefaultSort": true
+      }
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

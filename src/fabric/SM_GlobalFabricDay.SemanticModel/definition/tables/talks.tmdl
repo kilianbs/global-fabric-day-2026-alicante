@@ -1,0 +1,151 @@
+table talks
+	lineageTag: cec14698-2ec8-4796-b3c0-10b9c577f488
+	sourceLineageTag: [silver].[talks]
+
+	column talk_id
+		dataType: string
+		lineageTag: b3fe6047-ad62-4082-af99-fc03094c0fc8
+		sourceLineageTag: talk_id
+		summarizeBy: none
+		sourceColumn: talk_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column start_time
+		dataType: string
+		lineageTag: 8d5cbbcd-1f89-48f6-92f3-f0c03ba75f3d
+		sourceLineageTag: start_time
+		summarizeBy: none
+		sourceColumn: start_time
+
+		annotation SummarizationSetBy = Automatic
+
+	column end_time
+		dataType: string
+		lineageTag: 559ed7b5-00b1-4002-8c34-0dc92d782e37
+		sourceLineageTag: end_time
+		summarizeBy: none
+		sourceColumn: end_time
+
+		annotation SummarizationSetBy = Automatic
+
+	column room
+		dataType: string
+		lineageTag: e777cac6-4a53-4d7f-87c8-f1fc418dcb7a
+		sourceLineageTag: room
+		summarizeBy: none
+		sourceColumn: room
+
+		annotation SummarizationSetBy = Automatic
+
+	column title
+		dataType: string
+		lineageTag: 407d5549-65c4-44e7-9b32-1f01b6d8f68e
+		sourceLineageTag: title
+		summarizeBy: none
+		sourceColumn: title
+
+		annotation SummarizationSetBy = Automatic
+
+	column speaker
+		dataType: string
+		lineageTag: 0a7e8027-6e76-4c46-84e2-adfd5dc0bbdd
+		sourceLineageTag: speaker
+		summarizeBy: none
+		sourceColumn: speaker
+
+		annotation SummarizationSetBy = Automatic
+
+	column is_talk
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: bf7b06e4-83e5-4004-aed1-a6d928178f8b
+		sourceLineageTag: is_talk
+		summarizeBy: none
+		sourceColumn: is_talk
+
+		annotation SummarizationSetBy = Automatic
+
+	column is_break
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: b21778b3-0126-4c82-a02a-d982e63bca13
+		sourceLineageTag: is_break
+		summarizeBy: none
+		sourceColumn: is_break
+
+		annotation SummarizationSetBy = Automatic
+
+	column track
+		dataType: string
+		lineageTag: 781b60ec-433d-4bb5-b376-7ff752933795
+		sourceLineageTag: track
+		summarizeBy: none
+		sourceColumn: track
+
+		annotation SummarizationSetBy = Automatic
+
+	column duration_min
+		dataType: int64
+		formatString: 0
+		lineageTag: d3322ede-2c93-4747-aeb5-c5c96c4992ff
+		sourceLineageTag: duration_min
+		summarizeBy: sum
+		sourceColumn: duration_min
+
+		annotation SummarizationSetBy = Automatic
+
+	column speaker_count
+		dataType: int64
+		formatString: 0
+		lineageTag: 0359b3b1-8e21-437d-a7a8-19aacf59b4f7
+		sourceLineageTag: speaker_count
+		summarizeBy: sum
+		sourceColumn: speaker_count
+
+		annotation SummarizationSetBy = Automatic
+
+	column event_date
+		dataType: string
+		lineageTag: a5ab7213-d979-4ebc-b5df-20d6ce728f0b
+		sourceLineageTag: event_date
+		summarizeBy: none
+		sourceColumn: event_date
+
+		annotation SummarizationSetBy = Automatic
+
+	column loaded_env
+		dataType: string
+		lineageTag: 50a90aa6-1951-48a6-8d52-146f37655b70
+		sourceLineageTag: loaded_env
+		summarizeBy: none
+		sourceColumn: loaded_env
+
+		annotation SummarizationSetBy = Automatic
+
+	column processed_env
+		dataType: string
+		lineageTag: a149df9d-f8b0-4f20-b185-8c9c4b370894
+		sourceLineageTag: processed_env
+		summarizeBy: none
+		sourceColumn: processed_env
+
+		annotation SummarizationSetBy = Automatic
+
+	column processed_at
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: e66cc17b-c40e-4e78-9a42-e8b5258c0d0f
+		sourceLineageTag: processed_at
+		summarizeBy: none
+		sourceColumn: processed_at
+
+		annotation SummarizationSetBy = Automatic
+
+	partition talks = entity
+		mode: directLake
+		source
+			entityName: talks
+			schemaName: silver
+			expressionSource: 'DirectLake - LH_GlobalFabricDay'
+

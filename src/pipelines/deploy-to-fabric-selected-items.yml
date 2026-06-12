@@ -1,0 +1,105 @@
+trigger: none # solo ejecución manual, nunca automática
+
+parameters:
+  - name: target_env
+    displayName: "Entorno destino"
+    type: string
+    default: pre
+    values:
+      - pre
+      - main
+
+  - name: items_to_deploy
+    displayName: 'Items a desplegar (separados por comas)'
+    type: string
+    default: 'NB_DefaultLakehouse.Notebook'
+
+  - name: items_in_scope
+    displayName: Enter Fabric items to be deployed
+    type: string
+    default: '["Notebook","DataPipeline","Lakehouse","SemanticModel","Report","VariableLibrary"]'
+
+variables:
+  - group: fabric_cicd_group_sensitive
+  - group: fabric_cicd_group_non_sensitive
+
+stages:
+  - stage: DeploySelectivePre
+    displayName: "Selective deploy → PRE"
+    condition:  eq('${{ parameters.target_env }}', 'pre')
+    jobs:
+      - deployment: Deployment
+        displayName: "Deploy selected items to PRE"
+        environment: pre
+        pool:
+          name: Azure Pipelines
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                # Step 1: Checkout the source code
+                - checkout: self
+                # Step 2: Set up Python 3.12
+                - task: UsePythonVersion@0
+                  inputs:
+                    versionSpec: '3.12'
+                    addToPath: true
+                  displayName: "Set up Python Environment"
+                # Step 3: Install dependencies
+                - script: |
+                    python -m pip install --upgrade pip
+                    pip install fabric-cicd 
+                  displayName: "Install Fabric CICD Library"
+                # Step 4: Run the deployment script
+                - task: PythonScript@0
+                  inputs:
+                    scriptSource: filePath
+                    scriptPath: '.deploy/deploy-to-fabric-selective.py'
+                    arguments: >-
+                      --aztenantid $(pre-aztenantid)
+                      --azclientid $(pre-azclientid)
+                      --azspsecret $(pre-azspsecret)
+                      --items_in_scope "${{ parameters.items_in_scope }}"
+                      --target_env pre
+                      --items_to_deploy "${{ parameters.items_to_deploy }}"
+                  displayName: 'Selective deploy via fabric-cicd'
+
+  - stage: DeployMain
+    displayName: "Selective deploy → PRO"
+    condition:  eq('${{ parameters.target_env }}', 'main')
+    jobs:
+      - deployment: Deployment
+        displayName: "Deploy selected items to PRO"
+        environment: main
+        pool:
+          name: Azure Pipelines
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                # Step 1: Checkout the source code
+                - checkout: self
+                # Step 2: Set up Python 3.12
+                - task: UsePythonVersion@0
+                  inputs:
+                    versionSpec: '3.12'
+                    addToPath: true
+                  displayName: "Set up Python Environment"
+                # Step 3: Install dependencies
+                - script: |
+                    python -m pip install --upgrade pip
+                    pip install fabric-cicd 
+                  displayName: "Install Fabric CICD Library"
+                # Step 4: Run the deployment script
+                - task: PythonScript@0
+                  inputs:
+                    scriptSource: filePath
+                    scriptPath: '.deploy/deploy-to-fabric-selective.py'
+                    arguments: >-
+                      --aztenantid $(pro-aztenantid)
+                      --azclientid $(pro-azclientid)
+                      --azspsecret $(pro-azspsecret)
+                      --items_in_scope "${{ parameters.items_in_scope }}"
+                      --target_env main
+                      --items_to_deploy "${{ parameters.items_to_deploy }}"
+                  displayName: 'Selective deploy via fabric-cicd'
