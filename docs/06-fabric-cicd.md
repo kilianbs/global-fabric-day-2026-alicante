@@ -7,9 +7,9 @@
 - Documentación oficial: <https://microsoft.github.io/fabric-cicd/>
 - Paquete en PyPI: `fabric-cicd`
 
-## deploy.py por dentro
+## deploy-to-fabric.py por dentro
 
-El script `src/deploy/deploy.py` es el punto de entrada del pipeline. Aquí tienes un recorrido comentado de lo que hace:
+El script `deploy/deploy-to-fabric.py` es el punto de entrada del pipeline. Aquí tienes un recorrido comentado de lo que hace:
 
 ```python
 from fabric_cicd import FabricWorkspace, publish_all_items, unpublish_all_orphan_items
@@ -17,16 +17,16 @@ from fabric_cicd import FabricWorkspace, publish_all_items, unpublish_all_orphan
 
 Importa las tres piezas clave de la librería:
 
-- **`FabricWorkspace`** — objeto que representa el workspace destino. Recibe el GUID del workspace, el nombre del entorno (p. ej. `"PROD"`), la carpeta con las definiciones, la lista de tipos de ítem en alcance y la credencial de autenticación.
+- **`FabricWorkspace`** — objeto que representa el workspace destino. Recibe el GUID del workspace, el nombre del entorno (p. ej. `"pro"`), la carpeta con las definiciones, la lista de tipos de ítem en alcance y la credencial de autenticación.
 - **`publish_all_items`** — publica (crea o actualiza) todos los ítems del repo cuyo tipo esté en `ITEM_TYPES`.
-- **`unpublish_all_orphan_items`** — **borra del workspace** los ítems que ya no existen en la rama. Úsalo con precaución en Prod: si retiras un ítem del repo, esta función lo eliminará del workspace en el siguiente despliegue.
+- **`unpublish_all_orphan_items`** — **borra del workspace** los ítems que ya no existen en la rama. Úsalo con precaución en Pro: si retiras un ítem del repo, esta función lo eliminará del workspace en el siguiente despliegue.
 
 Los tipos de ítem que el script pone en alcance son:
 
 ```python
 ITEM_TYPES = [
-    "VariableLibrary",
     "Lakehouse",
+    "VariableLibrary",
     "Notebook",
     "DataPipeline",
     "SemanticModel",
@@ -36,88 +36,133 @@ ITEM_TYPES = [
 
 Solo se publican ítems cuyo tipo esté en esta lista; el resto se ignora aunque exista en la carpeta del repo.
 
-El script acepta tres argumentos obligatorios/opcionales:
+El script acepta los siguientes argumentos:
 
-| Argumento | Obligatorio | Descripción |
+| Argumento | Descripción |
+| --- | --- |
+| `--aztenantid` | GUID del tenant de Azure AD |
+| `--azclientid` | Client ID del Service Principal |
+| `--azspsecret` | Client Secret del Service Principal |
+| `--items_in_scope` | Lista JSON de tipos de ítem a publicar |
+| `--target_env` | Nombre del entorno destino (p. ej. `pro`) |
+
+Además de los argumentos, el script lee dos variables de entorno con `os.environ`:
+
+| Variable | Valor esperado | Descripción |
 | --- | --- | --- |
-| `--workspace-id` | Sí | GUID del workspace destino |
-| `--environment` | Sí | Nombre del entorno, p. ej. `PROD` |
-| `--auth` | No (default: `secret`) | `secret` (client secret) o `cli` (Azure CLI) |
-
-Cuando `--auth secret`, el script espera las variables de entorno `AZURE_TENANT_ID`, `AZURE_CLIENT_ID` y `AZURE_CLIENT_SECRET`. Cuando `--auth cli`, usa la sesión activa de Azure CLI — útil tanto para pruebas locales como para la tarea `AzureCLI@2` del pipeline.
+| `PROWORKSPACENAME` | `GFD_PRO` | Nombre del workspace de producción |
+| `GITDIRECTORY` | `fabric` | Carpeta Git donde Fabric guardó las definiciones |
 
 ## parameter.yml: el corazón de la promoción
 
-El archivo `src/workspace/parameter.yml` define **qué cambia entre entornos**. Tiene dos secciones:
-
-### key_value_replace
-
-```yaml
-key_value_replace:
-  - find_key: $.activeValueSetName
-    replace_value:
-      PROD: "Prod"
-    item_type: "VariableLibrary"
-    item_name: "DemoVariables"
-```
-
-Cuando el entorno destino es `PROD`, fabric-cicd localiza el ítem `DemoVariables` de tipo `VariableLibrary` y sustituye el valor de `$.activeValueSetName` por `"Prod"`. Así la Variable Library activa el value set correcto en producción sin que tengas que editar ningún archivo manualmente.
+El archivo `fabric/parameter.yml` define **qué cambia entre entornos**. Tiene dos secciones:
 
 ### find_replace
 
+La sección `find_replace` busca GUIDs concretos en **todos** los archivos de definición del repo y los sustituye por referencias dinámicas que fabric-cicd resuelve consultando el workspace destino en tiempo de ejecución.
+
 ```yaml
 find_replace:
-  - find_value: "00000000-0000-0000-0000-000000000000"
+  - find_value: "6b2d8c5d-8eb6-4b89-8f9e-5cfc82bdf2bb"
     replace_value:
-      PROD: "$items.Lakehouse.DemoLakehouse.$id"
-  - find_value: "11111111-1111-1111-1111-111111111111"
+      pro: "$workspace.$id"
+  - find_value: "1546a512-5301-4200-a7e8-774ac7cba230"
     replace_value:
-      PROD: "$workspace.$id"
+      pro: "$items.Lakehouse.LH_GlobalFabricDay.$id"
 ```
 
-La conexión Direct Lake del modelo semántico va **incrustada por GUID** en la definición del ítem — no puede resolverse con variables en runtime. Por eso `find_replace` busca los GUIDs de Dev en todos los archivos de definición y los sustituye por los del entorno destino antes de publicar.
+¿Por qué aparecen estos GUIDs en el repo? Los notebooks `NB_LoadTalks_Pipeline` y `NB_ProcessTalks_Pipeline` tienen el lakehouse `LH_GlobalFabricDay` **vinculado como lakehouse por defecto**. Esa vinculación queda incrustada por GUID en los metadatos del notebook — no puede resolverse con variables en runtime. Del mismo modo, el GUID del workspace `GFD_DEV` aparece en las referencias de workspace dentro de las definiciones de los ítems. Tener estos GUIDs en el repo es completamente deliberado: son exactamente los valores que fabric-cicd necesita localizar para sustituirlos por los del entorno destino al desplegar.
 
-Los tokens `$items.Lakehouse.DemoLakehouse.$id` y `$workspace.$id` son referencias dinámicas que fabric-cicd resuelve en tiempo de ejecución consultando el workspace destino.
+> **Mensaje clave:** el value set `pro` en el repo lleva los GUIDs de dev como placeholder; fabric-cicd los sustituye por los del workspace destino al desplegar — no hay que tocarlos a mano.
+
+### key_value_replace
+
+La sección `key_value_replace` modifica valores concretos dentro de las definiciones JSON de los ítems mediante expresiones JSONPath. Se usa para actualizar referencias entre ítems (como el `notebookId` en las actividades del pipeline) y para activar el value set correcto en la Variable Library:
+
+```yaml
+key_value_replace:
+  - find_key: "$.activities[?(@.name=='LoadTalks')].typeProperties.notebookId"
+    replace_value:
+      pro: "$items.Notebook.NB_LoadTalks_Pipeline.$id"
+    item_type: "DataPipeline"
+    item_name: "PL_Orquestador"
+  - find_key: "$.activities[?(@.name=='ProcessTalks')].typeProperties.notebookId"
+    replace_value:
+      pro: "$items.Notebook.NB_ProcessTalks_Pipeline.$id"
+    item_type: "DataPipeline"
+    item_name: "PL_Orquestador"
+  - find_key: "$.activities[?(@.name=='LoadTalks')].typeProperties.workspaceId"
+    replace_value:
+      pro: "$workspace.$id"
+    item_type: "DataPipeline"
+    item_name: "PL_Orquestador"
+  - find_key: "$.activities[?(@.name=='ProcessTalks')].typeProperties.workspaceId"
+    replace_value:
+      pro: "$workspace.$id"
+    item_type: "DataPipeline"
+    item_name: "PL_Orquestador"
+  - find_key: "$.valuesets[?(@.name=='pro')].values[?(@.name=='WORKSPACE_ID')].value"
+    replace_value:
+      pro: "$workspace.$id"
+    item_type: "VariableLibrary"
+    item_name: "VL_GlobalFabricDay"
+  - find_key: "$.valuesets[?(@.name=='pro')].values[?(@.name=='LAKEHOUSE_ID')].value"
+    replace_value:
+      pro: "$items.Lakehouse.LH_GlobalFabricDay.$id"
+    item_type: "VariableLibrary"
+    item_name: "VL_GlobalFabricDay"
+  - find_key: "$.activeValueSetName"
+    replace_value:
+      pro: "pro"
+    item_type: "VariableLibrary"
+    item_name: "VL_GlobalFabricDay"
+```
+
+Las reglas de `key_value_replace` para `PL_Orquestador` actualizan los `notebookId` y `workspaceId` de las actividades `LoadTalks` y `ProcessTalks` con los IDs reales del entorno destino. Las tres últimas reglas actúan sobre la Variable Library `VL_GlobalFabricDay`: sustituyen los valores de `WORKSPACE_ID` y `LAKEHOUSE_ID` en el value set `pro` y activan ese value set como el activo (`activeValueSetName`).
 
 > **Mensaje clave:** usa la Variable Library para lo que el runtime puede resolver; usa `parameter.yml` para lo que va incrustado en las definiciones de los ítems.
 
-## Sustituir los GUIDs de ejemplo
-
-El `parameter.yml` del repo usa GUIDs de marcador. Antes de desplegar, sustitúyelos por los GUIDs reales de tu entorno Dev:
-
-| Marcador | Sustituir por |
-| --- | --- |
-| `00000000-0000-0000-0000-000000000000` | GUID de `DemoLakehouse` en Dev (cópialo de la URL del lakehouse en Fabric) |
-| `11111111-1111-1111-1111-111111111111` | GUID del workspace `GFD26 - Dev` (cópialo de la URL del workspace) |
-
-Los GUIDs aparecen en la URL cuando navegas al ítem correspondiente en `app.fabric.microsoft.com`.
-
-> Nota: el `notebookId` que verás en la definición de `DemoPipeline` no necesita regla en `parameter.yml` — fabric-cicd resuelve las referencias entre ítems del mismo despliegue automáticamente al publicar.
-
 ## Probar en local antes del pipeline
 
-Con Azure CLI instalado e iniciada sesión (`az login`), puedes desplegar directamente a Prod desde tu máquina para validar la configuración antes de montar el pipeline:
+Puedes desplegar directamente a `GFD_PRO` desde tu máquina para validar la configuración antes de montar el pipeline. El script usa un Service Principal, así que necesitas tener las credenciales a mano.
 
-```bash
-pip install -r src/deploy/requirements.txt
-python src/deploy/deploy.py --workspace-id <GUID-Prod> --environment PROD --auth cli
+### 1. Exportar las variables de entorno
+
+```powershell
+$env:PROWORKSPACENAME = "GFD_PRO"
+$env:GITDIRECTORY = "fabric"
 ```
 
-Esto despliega **todos** los ítems de `ITEM_TYPES` al workspace `GFD26 - Prod`. La salida esperada es una lista de los ítems publicados; al final debería aparecer también el resultado de `unpublish_all_orphan_items`. Si algo falla, el error de la API suele indicar claramente qué ítem o qué permiso falta.
+### 2. Ejecutar el script
 
-> **Aviso:** `--auth cli` usa tu sesión personal de Azure CLI, no el SP. Asegúrate de que tu usuario también tiene acceso al workspace Prod antes de hacer esta prueba, o añádete temporalmente con rol Admin.
+```bash
+pip install fabric-cicd
+python deploy/deploy-to-fabric.py \
+  --aztenantid <tenant-id> \
+  --azclientid <client-id> \
+  --azspsecret <secret> \
+  --items_in_scope '["Lakehouse","VariableLibrary","Notebook","DataPipeline","SemanticModel","Report"]' \
+  --target_env pro
+```
 
-## ✅ Checkpoint
+El resultado esperado es una lista de los ítems publicados en `GFD_PRO`. Si algo falla, el error de la API suele indicar claramente qué ítem o qué permiso falta.
 
-- [ ] `parameter.yml` tiene los GUIDs reales de tu workspace y lakehouse Dev
-- [ ] El despliegue local a Prod (`--auth cli`) termina sin errores y los ítems aparecen en GFD26 - Prod
+> **Aviso:** el script usa el Service Principal, no tu sesión personal. Asegúrate de que el SP tiene rol **Contributor** (o superior) en el workspace `GFD_PRO` antes de hacer esta prueba.
+
+## Checkpoint
+
+- [ ] Las variables `PROWORKSPACENAME` y `GITDIRECTORY` están exportadas en la sesión de PowerShell
+- [ ] El despliegue local a `GFD_PRO` termina sin errores y los ítems aparecen en el workspace
+- [ ] `parameter.yml` tiene las reglas `find_replace` con los GUIDs de `GFD_DEV` y `LH_GlobalFabricDay`
+- [ ] `parameter.yml` tiene las reglas `key_value_replace` para `PL_Orquestador` y `VL_GlobalFabricDay` con el entorno `pro`
 
 ## Errores típicos
 
 | Síntoma | Causa | Solución |
 | --- | --- | --- |
-| `parameter.yml` no encontrado | La carpeta `workspace/` no es el `repository_directory` | Verificar que `--repository-directory` apunta a `src/workspace` o ajustar la ruta por defecto en `deploy.py` |
-| `Item type not in scope` | El tipo de ítem no está en `ITEM_TYPES` | Añadir el tipo correspondiente a la lista `ITEM_TYPES` en `deploy.py` |
-| Error de GUID incrustado tras desplegar | Los marcadores de `parameter.yml` no se sustituyeron | Reemplazar `00000000-...` y `11111111-...` por los GUIDs reales y volver a desplegar |
+| `parameter.yml` no encontrado | La carpeta `fabric/` no es el directorio configurado | Verificar que `GITDIRECTORY=fabric` está exportado antes de ejecutar el script |
+| `Item type not in scope` | El tipo de ítem no está en `--items_in_scope` | Añadir el tipo correspondiente a la lista del argumento |
+| Error de GUID incrustado tras desplegar | Las reglas `find_replace` no cubren todos los GUIDs de dev | Revisar los metadatos del ítem afectado y añadir la regla correspondiente en `parameter.yml` |
+| `PROWORKSPACENAME` no definida | La variable de entorno no está exportada | Exportar con `$env:PROWORKSPACENAME = "GFD_PRO"` antes de ejecutar el script |
 
 ⬅️ [Módulo 05](05-service-principal.md) · ➡️ [Módulo 07 — Pipelines](07-pipelines-ado.md)
