@@ -1,17 +1,20 @@
+# Camino 2 — Deploy de cambios.
+# Mismo trigger que el camino 1, pero solo despliega los items que han
+# cambiado respecto al ultimo commit (git diff HEAD~1).
+# El parametro force_full_deploy permite forzar un despliegue completo.
 trigger:
   branches:
     include:
-    - pre
-    - main
+    - pro
   paths:
     include:
     - fabric/**
 
 parameters:
 - name: items_in_scope
-  displayName: Enter Fabric items to be deployed
+  displayName: Tipos de items de Fabric a desplegar
   type: string
-  default: '["Notebook","DataPipeline","Lakehouse","SemanticModel","Report","VariableLibrary"]'
+  default: '["Lakehouse","VariableLibrary","Notebook","DataPipeline","SemanticModel","Report"]'
 
 - name: force_full_deploy
   displayName: Forzar despliegue completo (ignora git diff)
@@ -21,121 +24,60 @@ parameters:
 variables:
   - group: fabric_cicd_group_sensitive
   - group: fabric_cicd_group_non_sensitive
-  - name: target_env
-    value: ${{ variables['Build.SourceBranchName'] }}
 
 stages:
-  - stage: DeployPre
-    displayName: "Deploy to PRE"
-    condition: eq(variables['Build.SourceBranchName'], 'pre')
+  - stage: DeployPro
+    displayName: "Deploy changes to PRO"
     jobs:
-
       - job: DeploySolution
         pool:
           vmImage: windows-latest
         steps:
-          # Step 1: Checkout the source code
+          # Step 1: Checkout con historial completo (necesario para git diff)
           - checkout: self
-            fetchDepth: 0 # Necesario para obtener el historial completo de commits
+            fetchDepth: 0
             persistCredentials: true
 
-          # Step 2: Set up Python 3.12
+          # Step 2: Python 3.12
           - task: UsePythonVersion@0
             inputs:
               versionSpec: '3.12'
               addToPath: true
             displayName: "Set up Python Environment"
 
-          # Step 3: Install dependencies
+          # Step 3: Dependencias
           - script: |
               python -m pip install --upgrade pip
-              pip install fabric-cicd 
+              pip install fabric-cicd
             displayName: "Install Fabric CICD Library"
 
-          # Task para despliegue SELECTIVO (force_full_deploy = false)
+          # Despliegue de SOLO CAMBIOS (force_full_deploy = false)
           - task: PythonScript@0
             condition: eq('${{ parameters.force_full_deploy }}', 'false')
             inputs:
               scriptSource: filePath
-              scriptPath: '.deploy/deploy-to-fabric-changes.py'
-              arguments: >-
-                --aztenantid $(pre-aztenantid)
-                --azclientid $(pre-azclientid)
-                --azspsecret $(pre-azspsecret)
-                --items_in_scope "${{ parameters.items_in_scope }}"
-                --target_env pre
-                --git_compare_ref HEAD~1
-            displayName: 'Deploy changed items via fabric-cicd'
-
-          # Task para despliegue COMPLETO (force_full_deploy = true)
-          - task: PythonScript@0
-            condition: eq('${{ parameters.force_full_deploy }}', 'true')
-            inputs:
-              scriptSource: filePath
-              scriptPath: '.deploy/deploy-to-fabric-changes.py'
-              arguments: >-
-                --aztenantid $(pre-aztenantid)
-                --azclientid $(pre-azclientid)
-                --azspsecret $(pre-azspsecret)
-                --items_in_scope "${{ parameters.items_in_scope }}"
-                --target_env pre
-                --git_compare_ref HEAD~1
-                --force_full_deploy
-            displayName: 'Deploy via fabric-cicd'
-
-  - stage: DeployMain
-    displayName: "Deploy to PRO"
-    condition: eq(variables['Build.SourceBranchName'], 'main')
-    jobs:
-      - job: DeploySolution
-        pool:
-          vmImage: windows-latest
-        steps:
-          # Step 1: Checkout the source code
-          - checkout: self
-            fetchDepth: 0 # Necesario para obtener el historial completo de commits y detectar cambios correctamente
-            persistCredentials: true
-
-          # Step 2: Set up Python 3.12
-          - task: UsePythonVersion@0
-            inputs:
-              versionSpec: '3.12'
-              addToPath: true
-            displayName: "Set up Python Environment"
-
-          # Step 3: Install dependencies
-          - script: |
-              python -m pip install --upgrade pip
-              pip install fabric-cicd 
-            displayName: "Install Fabric CICD Library"
-
-          # Task para despliegue SELECTIVO (force_full_deploy = false)
-          - task: PythonScript@0
-            condition: eq('${{ parameters.force_full_deploy }}', 'false')
-            inputs:
-              scriptSource: filePath
-              scriptPath: '.deploy/deploy-to-fabric-changes.py'
+              scriptPath: 'deploy/deploy-to-fabric-changes.py'
               arguments: >-
                 --aztenantid $(pro-aztenantid)
                 --azclientid $(pro-azclientid)
                 --azspsecret $(pro-azspsecret)
                 --items_in_scope "${{ parameters.items_in_scope }}"
-                --target_env main
+                --target_env pro
                 --git_compare_ref HEAD~1
             displayName: 'Deploy changed items via fabric-cicd'
 
-          # Task para despliegue COMPLETO (force_full_deploy = true)
+          # Despliegue COMPLETO (force_full_deploy = true)
           - task: PythonScript@0
             condition: eq('${{ parameters.force_full_deploy }}', 'true')
             inputs:
               scriptSource: filePath
-              scriptPath: '.deploy/deploy-to-fabric-changes.py'
+              scriptPath: 'deploy/deploy-to-fabric-changes.py'
               arguments: >-
                 --aztenantid $(pro-aztenantid)
                 --azclientid $(pro-azclientid)
                 --azspsecret $(pro-azspsecret)
                 --items_in_scope "${{ parameters.items_in_scope }}"
-                --target_env main
+                --target_env pro
                 --git_compare_ref HEAD~1
                 --force_full_deploy
-            displayName: 'Deploy via fabric-cicd'
+            displayName: 'Full deploy via fabric-cicd'
