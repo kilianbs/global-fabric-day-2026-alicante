@@ -8,11 +8,11 @@ Repositorio de la charla **"CI/CD en Microsoft Fabric"** presentada en el Global
 feature/* (branch-out desde Fabric)
     │  PR a dev
     ▼
-dev ──Git integration──▶ Workspace Dev
+dev ──Git integration──▶ Workspace GFD_DEV
     │
-    │  PR de dev a main ──▶ merge dispara el pipeline CD
+    │  PR de dev a pro ──▶ merge dispara el pipeline CD
     ▼
-main ──▶ fabric-cicd ──▶ Workspace Prod  (con aprobación manual)
+pro ──▶ fabric-cicd ──▶ Workspace GFD_PRO  (con aprobación manual)
 ```
 
 ## La guía
@@ -32,9 +32,9 @@ main ──▶ fabric-cicd ──▶ Workspace Prod  (con aprobación manual)
 
 | Carpeta | Contenido |
 | --- | --- |
-| `src/workspace/` | Definiciones de los ítems de Fabric en formato Git (Lakehouse, Notebook, DataPipeline, VariableLibrary) más `parameter.yml` con los parámetros de despliegue por entorno |
-| `src/deploy/` | `deploy.py` (orquesta el despliegue con fabric-cicd), `validate.py` (comprobaciones previas al merge) y `requirements.txt` |
-| `src/pipelines/` | YAMLs de los pipelines de Azure DevOps: `azure-pipelines-ci.yml` (validación en PR) y `azure-pipelines-cd.yml` (despliegue a Prod tras merge a main) |
+| `src/fabric/` | Definiciones de los ítems de Fabric en formato Git (Lakehouse, Notebook, DataPipeline, VariableLibrary) más `parameter.yml` con los parámetros de despliegue por entorno |
+| `src/deploy/` | Scripts Python de despliegue: `deploy-dev.py`, `deploy-pro.py` y `validate.py` |
+| `src/pipelines/` | YAMLs de los pipelines de Azure Pipelines: 3 pipelines de despliegue (dev, pro, validación) |
 | `docs/` | La guía de ocho módulos que cubre toda la configuración de extremo a extremo |
 | `assets/` | Capturas de pantalla y recursos gráficos de apoyo |
 
