@@ -8,9 +8,9 @@ Abre **Entra ID** (`portal.azure.com > Microsoft Entra ID > App registrations`) 
 
 No necesitas añadir permisos de API delegados en el panel *API permissions*. La librería `fabric-cicd` se autentica con las APIs de Fabric usando el **rol de workspace** que le asignarás en el paso 4, no permisos de Microsoft Graph.
 
-Apunta ya el **Directory (tenant) ID** y el **Application (client) ID** que aparecen en la página de *Overview* de la app; los necesitarás en los módulos siguientes. Esta app es la identidad del pipeline tanto si usas la variante A (secreto) como la variante B federada manual.
+Apunta ya el **Directory (tenant) ID** y el **Application (client) ID** que aparecen en la página de *Overview* de la app; los necesitarás en los módulos siguientes.
 
-## 2. Variante A — Secreto de cliente
+## 2. Autenticación con secreto de cliente
 
 Si decides usar autenticación por secreto, ve a **Certificates & secrets > Client secrets > New client secret**. Pon una descripción y elige la caducidad que necesites.
 
@@ -18,29 +18,13 @@ Si decides usar autenticación por secreto, ve a **Certificates & secrets > Clie
 
 Con esta variante necesitas tres datos para el pipeline: **tenant ID**, **client ID** y el **secreto**. Es la opción más sencilla de entender, pero el secreto caduca y hay que rotarlo manualmente cada cierto tiempo.
 
-## 3. Variante B — Federación (Workload Identity)
+## 3. Dar acceso al workspace Prod
 
-Esta es la variante recomendada para uso real porque **no hay secretos que rotar**.
-
-En Azure DevOps, ve a **Project settings > Service connections > New service connection > Azure Resource Manager** y selecciona **Workload Identity federation**. Aquí tienes dos sub-opciones:
-
-**(a) Automatic** — ADO crea y gestiona su propia app registration; **no reutiliza la app del paso 1**. Es la opción más rápida porque no requiere ninguna configuración adicional en Entra ID, pero la identidad que resulta es diferente a la del paso 1 (ver nota en el paso 4).
-
-**(b) Manual** *(recomendada para esta guía)* — reutiliza la app registration que creaste en el paso 1. Selecciona esta sub-opción, introduce el **tenant ID** y el **client ID** de esa app, y completa la creación de la service connection. ADO te mostrará un **subject identifier** (una cadena de tipo `sc://…`); cópialo y ve a la app del paso 1 en Entra ID: **App registrations > sp-fabric-cicd-demo > Certificates & secrets > Federated credentials > Add credential**. Elige el escenario *Other issuer*, pega el subject identifier como valor del campo *Subject identifier* y guarda. Con esto, ADO puede obtener tokens en nombre de esa app sin que exista ningún secreto.
-
-Asigna el nombre `sc-fabric-cicd-demo` a la service connection (exactamente este nombre, porque el pipeline del módulo 07 lo referencia así).
-
-La conexión de servicio actúa como intermediaria: cuando el pipeline la usa, ADO obtiene un token de corta duración de Entra ID sin que tú almacenes nada.
-
-## 4. Dar acceso al workspace Prod
-
-Entra en el workspace **GFD26 - Prod** y abre **Manage access > Add people or groups**. Busca la app registration por su nombre (`sp-fabric-cicd-demo`) y asígnale el rol **Admin**.
-
-> **Nota (sub-opción automatic):** si elegiste la sub-opción automatic en el paso 3, la identidad a la que debes dar acceso **no es la app del paso 1**, sino la que ADO creó automáticamente. Puedes ver su nombre exacto en **Project settings > Service connections > sc-fabric-cicd-demo > Details**.
+Entra en el workspace **GFD_PRO** y abre **Manage access > Add people or groups**. Busca la app registration por su nombre (`sp-fabric-cicd-demo`) y asígnale el rol **Admin**.
 
 El rol *Member* bastaría técnicamente para publicar ítems, pero en la demo el rol *Admin* evita fricciones si fabric-cicd necesita modificar configuraciones del workspace durante el despliegue. En un entorno de producción real, aplica el principio de mínimo privilegio y evalúa si *Member* o *Contributor* cubren tus necesidades.
 
-## 5. Tenant setting
+## 4. Tenant setting
 
 En el **Admin portal** de Fabric (`app.fabric.microsoft.com > Settings > Admin portal > Tenant settings`), localiza **Service principals can use Fabric APIs** y asegúrate de que está habilitado.
 
@@ -50,8 +34,8 @@ Para acotar el alcance del permiso, en lugar de habilitarlo para toda la organiz
 
 ## ✅ Checkpoint
 
-- [ ] Tienes el tenant ID y el client ID apuntados (+ el secreto si usas la variante A)
-- [ ] El SP aparece en Manage access del workspace GFD26 - Prod con rol Admin
+- [ ] Tienes el tenant ID, el client ID y el secreto apuntados
+- [ ] El SP aparece en Manage access del workspace GFD_PRO con rol Admin
 - [ ] El tenant setting "Service principals can use Fabric APIs" está activo
 
 ## Errores típicos
