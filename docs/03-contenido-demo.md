@@ -49,7 +49,7 @@ Ahora añade el value set de producción. En la barra superior del editor de la 
 
 El value set activo en Dev debe quedarse en **Default** (valor por defecto). El archivo `settings.json` del repositorio de referencia confirma esta configuración: `"activeValueSetName": "Default"`.
 
-Puedes comparar la estructura resultante con `../src/workspace/VL_GlobalFabricDay.VariableLibrary/` de este repositorio.
+Puedes comparar la estructura resultante con `../src/fabric/VL_GlobalFabricDay.VariableLibrary/` de este repositorio.
 
 ![variable library](../assets/03-variable-library.png)
 
@@ -88,7 +88,7 @@ Esta instrucción ejecuta `NB_SetDefaultLakehouse` antes de cualquier operación
 
 **Ventaja principal:** cero GUIDs en el código. No hay nada que parametrizar al desplegar en producción; todo se resuelve desde `VL_GlobalFabricDay`.
 
-Encuéntra el contenido de las celdas de cada notebook en `../src/workspace/NB_LoadTalks.Notebook/notebook-content.py` y `../src/workspace/NB_ProcessTalks.Notebook/notebook-content.py`.
+Encuéntra el contenido de las celdas de cada notebook en `../src/fabric/NB_LoadTalks.Notebook/notebook-content.py` y `../src/fabric/NB_ProcessTalks.Notebook/notebook-content.py`.
 
 ### Camino 2 — Parámetros desde pipeline
 
