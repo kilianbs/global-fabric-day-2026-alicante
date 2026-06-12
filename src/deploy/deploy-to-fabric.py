@@ -85,19 +85,46 @@ repository_directory = os.environ["GITDIRECTORY"]
 
 # convert the item types argument into a valid list
 item_types = args.items_in_scope.strip("[]").split(",")
+item_types = [i.strip().strip('"').strip("'") for i in args.items_in_scope.strip("[]").split(",") if i.strip()]
 
-# Initialize the FabricWorkspace object with the required parameters
-target_workspace = FabricWorkspace(
-    workspace_id=wks_id,
-    environment=tgtenv,
-    repository_directory=repository_directory,
-    item_type_in_scope=item_types,
-    token_credential=token_credential,
-)
 
-# Publish items to the workspace
-print(f'Publish branch to workspace...')
-publish_all_items(target_workspace)
+# Grupos de despliegue — cada grupo espera a que el anterior termine
+DEPLOY_GROUPS = [
+    ["Lakehouse"],                                          # Fase 1: infraestructura base
+    ["VariableLibrary", "Notebook", "Spark Job Definition"], # Fase 2: depende del Lakehouse
+    ["DataPipeline"],                                       # Fase 3: depende de Notebooks
+    ["SemanticModel"],                                      # Fase 4: depende del Lakehouse
+    ["Report"],                                             # Fase 5: depende del Semantic Model
+]
 
-# Unpublish orphaned items from the workspace
-unpublish_all_orphan_items(target_workspace)
+for group in DEPLOY_GROUPS:
+    # Solo desplegar los items del grupo que están en el scope solicitado
+    items_in_group = [item for item in group if item in item_types]
+    if not items_in_group:
+        continue
+
+    print(f"\nDesplegando grupo: {items_in_group}")
+    
+    group_workspace = FabricWorkspace(
+        workspace_id=wks_id,
+        environment=tgtenv,
+        repository_directory=repository_directory,
+        item_type_in_scope=items_in_group,
+        token_credential=token_credential,
+    )
+    publish_all_items(group_workspace)
+
+print(f"\nDespliegue completado en {tgtenv.upper()}.")
+
+# # Initialize the FabricWorkspace object with the required parameters
+# target_workspace = FabricWorkspace(
+#     workspace_id=wks_id,
+#     environment=tgtenv,
+#     repository_directory=repository_directory,
+#     item_type_in_scope=item_types,
+#     token_credential=token_credential,
+# )
+
+# # Publish items to the workspace
+# print(f'Publish branch to workspace...')
+# publish_all_items(target_workspace)

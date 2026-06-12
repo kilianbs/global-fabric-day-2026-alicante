@@ -15,7 +15,7 @@ VL_GlobalFabricDay ──▶ PL_Orquestador ──▶ NB_LoadTalks_Pipeline  ─
 
 ## 1. LH_GlobalFabricDay
 
-Desde el workspace **GFD_DEV**, haz clic en **+ New item**, desplázate hasta la sección *Data Engineering* y selecciona **Lakehouse**. En el campo de nombre escribe exactamente `LH_GlobalFabricDay` — las mayúsculas importan porque el archivo `parameter.yml` referencia `$items.Lakehouse.LH_GlobalFabricDay.$id` para resolver el GUID en tiempo de despliegue.
+Desde el workspace **GFD_DEV**, haz clic en **+ New item** y selecciona **Lakehouse**. En el campo de nombre escribe exactamente `LH_GlobalFabricDay` — las mayúsculas importan porque el archivo `parameter.yml` referencia `$items.Lakehouse.LH_GlobalFabricDay.$id` para resolver el GUID en tiempo de despliegue.
 
 ![new lakehouse](../assets/03-new-lakehouse.png)
 
@@ -43,7 +43,7 @@ Una vez abierto el editor de la Variable Library, añade las cuatro variables qu
 
 Ahora añade el value set de producción. En la barra superior del editor de la Variable Library, haz clic en **+ Add value set** y llámalo exactamente `pro` (en minúsculas). Dentro del value set añade únicamente el siguiente override:
 
-- `FABRIC_ENV` → valor: `PRO`
+- `FABRIC_ENV` → valor: `pro`
 
 > **Nota importante:** los overrides de `WORKSPACE_ID` y `LAKEHOUSE_ID` en el value set `pro` **no se añaden a mano**. El proceso de despliegue de fabric-cicd los inyecta automáticamente cuando despliega los ítems en el workspace de producción. El módulo 06 explica este mecanismo en detalle.
 
@@ -109,7 +109,7 @@ Encuéntra el contenido en `../src/workspace/NB_LoadTalks_Pipeline.Notebook/note
 
 Crea también el notebook `NB_Orquestador`. Este notebook orquesta la ejecución de los notebooks del Camino 1 (`NB_LoadTalks` y `NB_ProcessTalks`) usando celdas `%run`, como alternativa al pipeline cuando se prefiere ejecutar la cadena completa desde un único notebook sin usar `PL_Orquestador`.
 
-*(captura pendiente: assets/03-notebooks.png)*
+![orquestador notebooks](../assets/03-notebooks.png)
 
 ---
 
@@ -120,6 +120,8 @@ Desde el workspace, haz clic en **+ New item** y selecciona **Data pipeline**. P
 ### Conectar la Variable Library
 
 Antes de añadir las actividades, conecta la Variable Library al pipeline. En el lienzo del pipeline, ve a la pestaña **Library variables** y selecciona `VL_GlobalFabricDay`. Esto permite usar la expresión `@pipeline().libraryVariables.*` en todas las actividades del pipeline.
+
+![Pipeline Variable Library](../assets/03-pipeline-variable-library.png)
 
 ### Actividades de notebook
 
@@ -148,11 +150,11 @@ En el lienzo del pipeline, añade dos actividades de tipo **Notebook**:
 3. Añade los mismos cuatro parámetros con las mismas expresiones que en la actividad anterior.
 4. Conecta `ProcessTalks` a `LoadTalks` arrastrando el conector de éxito (flecha verde) para que se ejecuten en secuencia.
 
+![Pipeline](../assets/03-pipeline.png)
+
 Guarda el pipeline con **Save**.
 
 Ejecuta el pipeline con **Run** y espera a que ambas actividades terminen con el estado *Succeeded*. Si alguna actividad falla, abre el detalle y comprueba el mensaje de error; los más frecuentes se recogen en la tabla de errores al final de este módulo.
-
-*(captura pendiente: assets/03-pipeline-run.png)*
 
 ---
 
@@ -160,16 +162,19 @@ Ejecuta el pipeline con **Run** y espera a que ambas actividades terminen con el
 
 El modelo semántico Direct Lake se crea directamente desde el lakehouse. Abre **LH_GlobalFabricDay**, despliega el menú **New semantic model** (esquina superior derecha o desde el menú de tres puntos del lakehouse) y sigue estos pasos:
 
-1. En el diálogo de selección de tablas marca las tablas que hayan generado los notebooks de procesamiento.
+1. En el diálogo de selección de tablas marca la tabla `talks` del schema silver.
 2. En el campo de nombre escribe `SM_GlobalFabricDay` y haz clic en **Confirm**.
 
-Fabric crea el modelo y lo abre en el editor de modelos semánticos. Añade al menos una medida para que el informe tenga algo que mostrar:
-
-- Selecciona una tabla en el panel de campos, haz clic en **New measure** e introduce una medida de recuento o suma relevante para los datos de la demo.
+Fabric crea el modelo y lo abre en el editor de modelos semánticos. Añade las siguientes medidas:
+- **Entorno Activo** = MAX(talks[processed_env])
+- **Total Charlas** = COUNTROWS(talks)
+- **Total Ponentes** = SUM(talks[speaker_count])
+- **Minutos Contenido**= SUM(talks[duration_min])
+- **Duración Media** = AVERAGE(talks[duration_min])
 
 Guarda el modelo.
 
-*(captura pendiente: assets/03-semantic-model.png)*
+![semantic-model](../assets/03-semantic-model.png)
 
 ---
 
@@ -181,7 +186,7 @@ Construye una página sencilla con dos o tres visualizaciones basadas en los dat
 
 Cuando termines, ve a **File > Save** y guarda el informe con el nombre exacto `RPT_GlobalFabricDay`. Confirma que el nombre aparece así en la lista de ítems del workspace.
 
-*(captura pendiente: assets/03-report.png)*
+![report](../assets/03-report.png)
 
 ---
 

@@ -61,7 +61,7 @@ Los tres pipelines despliegan al mismo workspace (`GFD_PRO`) y comparten los var
 
 **Cómo registrarlo en ADO:**
 
-Ve a **Pipelines > New pipeline > Azure Repos Git**, elige el repositorio `Global Fabric Day` y selecciona **Existing Azure Pipelines YAML file**. En la rama `pro`, introduce la ruta `pipelines/deploy-to-fabric.yml` y finaliza la creación.
+Ve a **Pipelines > New pipeline > Azure Repos Git**, elige el repositorio `Global Fabric Day` y selecciona **Existing Azure Pipelines YAML file**. En la rama `dev`, introduce la ruta `pipelines/deploy-to-fabric.yml` y finaliza la creación.
 
 > Este es el pipeline que se deja habilitado para la demo.
 
@@ -120,12 +120,6 @@ Mismo proceso que los anteriores pero con la ruta `pipelines/deploy-to-fabric-se
 | Deploy de todo | `pipelines/deploy-to-fabric.yml` | Automático (push a `pro` con cambios en `fabric/**`) | Todos los ítems |
 | Deploy de cambios | `pipelines/deploy-to-fabric-changes.yml` | Automático (mismo) | Solo ítems con diff vs último commit |
 | Deploy selectivo | `pipelines/deploy-to-fabric-selected-items.yml` | Manual | Ítems especificados por nombre |
-
-## 3. Build validation sobre `pro` (opcional)
-
-La rama `pro` puede tener una política de PR que exija revisión y aprobación antes de que un merge se complete. Esta configuración es independiente de los pipelines de despliegue: se gestiona desde **Repos > Branches > Branch policies** de la rama `pro`.
-
-No hay pipeline de CI de validación en este proyecto; la única automatización de calidad que se puede añadir es la aprobación humana en el PR.
 
 ## ✅ Checkpoint
 

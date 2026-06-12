@@ -45,13 +45,13 @@ parser.add_argument('--items_to_deploy',type=str, help= 'Defines the specific it
 args = parser.parse_args()
 item_types_in_scope = args.items_in_scope
 
-# Convierte "NB_SetDefaultLakehouse.Notebook, RPT_GlobalFabricDay.Report"
-# en     ["NB_SetDefaultLakehouse.Notebook", "RPT_GlobalFabricDay.Report"]
+# Convierte "NB_DefaultLakehouse.Notebook, RPT_GlobalFabricDay.Report"
+# en     ["NB_DefaultLakehouse.Notebook", "RPT_GlobalFabricDay.Report"]
 items_to_deploy = [item.strip() for item in args.items_to_deploy.split(",") if item.strip()]
 if not items_to_deploy:
     raise ValueError(
         "--items_to_deploy no puede estar vacío.\n"
-        "Ejemplo: NB_SetDefaultLakehouse.Notebook, RPT_GlobalFabricDay.Report"
+        "Ejemplo: NB_DefaultLakehouse.Notebook, RPT_GlobalFabricDay.Report"
     )
 print(f"Items seleccionados para desplegar: {items_to_deploy}")
 

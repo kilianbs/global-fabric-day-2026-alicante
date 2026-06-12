@@ -17,7 +17,7 @@ parameters:
 
 variables:
   - group: fabric_cicd_group_sensitive
-  - group: fabric_cicd_group_non_sensitive
+  - group: fabric_cicd_group_non_sensitive2
 
 stages:
   - stage: DeployPro

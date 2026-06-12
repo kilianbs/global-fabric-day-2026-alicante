@@ -111,14 +111,9 @@ key_value_replace:
       pro: "$items.Lakehouse.LH_GlobalFabricDay.$id"
     item_type: "VariableLibrary"
     item_name: "VL_GlobalFabricDay"
-  - find_key: "$.activeValueSetName"
-    replace_value:
-      pro: "pro"
-    item_type: "VariableLibrary"
-    item_name: "VL_GlobalFabricDay"
 ```
 
-Las reglas de `key_value_replace` para `PL_Orquestador` actualizan los `notebookId` y `workspaceId` de las actividades `LoadTalks` y `ProcessTalks` con los IDs reales del entorno destino. Las tres últimas reglas actúan sobre la Variable Library `VL_GlobalFabricDay`: sustituyen los valores de `WORKSPACE_ID` y `LAKEHOUSE_ID` en el value set `pro` y activan ese value set como el activo (`activeValueSetName`).
+Las reglas de `key_value_replace` para `PL_Orquestador` actualizan los `notebookId` y `workspaceId` de las actividades `LoadTalks` y `ProcessTalks` con los IDs reales del entorno destino. Las dos últimas reglas actúan sobre la Variable Library `VL_GlobalFabricDay`: sustituyen los valores de `WORKSPACE_ID` y `LAKEHOUSE_ID` en el value set `pro`.
 
 > **Mensaje clave:** usa la Variable Library para lo que el runtime puede resolver; usa `parameter.yml` para lo que va incrustado en las definiciones de los ítems.
 

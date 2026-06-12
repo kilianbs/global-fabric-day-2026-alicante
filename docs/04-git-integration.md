@@ -16,7 +16,7 @@ Crea ahora la rama `pro` a partir de `dev`: haz clic en **+ New branch**, escrib
 
 > **Nota:** este repositorio no tiene rama `main`. El flujo de trabajo es `feature/* → dev → pro`.
 
-*(captura pendiente: assets/04-ado-repo-branches.png)*
+![branches](../assets/04-ado-repo-branches.png)
 
 ---
 
@@ -34,7 +34,7 @@ Rellena los campos del formulario de conexión:
 
 Haz clic en **Connect and sync**. Fabric detectará que la carpeta `fabric` está vacía y te pedirá que elijas entre exportar los ítems del workspace al repo o importar lo que hay en el repo al workspace. Selecciona **Export workspace items to Git**: los ítems que creaste en el módulo 03 se exportarán como commit inicial a la rama `dev`.
 
-*(captura pendiente: assets/04-git-connect.png)*
+![git-connect](../assets/04-git-connect.png)
 
 ---
 
@@ -48,7 +48,7 @@ Abre el repositorio en ADO y navega a la rama `dev`. Dentro de la carpeta `fabri
 
 Compara estas carpetas con `src/fabric/` del repositorio de GitHub que estás leyendo: la estructura es equivalente. La diferencia es que los GUIDs de tu entorno serán distintos; los marcadores de posición del repo de referencia (`00000000-...`) se usan en el módulo 05 para explicar cómo fabric-cicd los sustituye.
 
-*(captura pendiente: assets/04-repo-structure.png)*
+![repo-structure](../assets/04-repo-structure.png)
 
 ---
 
@@ -95,13 +95,21 @@ git push
 
 Fabric permite crear un workspace temporal vinculado a una rama de feature en un solo gesto. Desde el workspace **GFD_DEV**, fíjate en la barra de estado inferior del workspace: el nombre de la rama (`dev`) aparece junto a un icono de ramificación. Haz clic en él y selecciona **Branch out to new workspace**.
 
+![branch-out-workspace](../assets/04-branch-out-workspace.png)
+
 Fabric te pedirá el nombre de la rama; escribe algo como `feature/prueba-notebook`. Automáticamente creará la rama en ADO a partir de `dev` y un workspace nuevo sincronizado con esa rama. Trabaja en ese workspace como si fuera tu entorno personal de desarrollo.
+
+![branch-out-workspace2](../assets/04-branch-out-workspace2.png)
 
 Haz un cambio pequeño para practicar el flujo: por ejemplo, abre NB_LoadTalks en el workspace feature, añade una celda con un `print("hola")` y guárdala. Luego abre el panel **Source control** (icono de Git en la barra izquierda), escribe un mensaje de commit como `chore: celda de prueba` y haz clic en **Commit**. El cambio queda registrado en la rama `feature/prueba-notebook` del repo de ADO.
 
-Abre ADO, crea un **Pull Request** desde `feature/prueba-notebook` hacia `dev` y complétalo (puedes aprobarlo tú mismo si eres el único revisor). Una vez que el PR hace merge, vuelve al workspace **GFD_DEV**, abre **Source control** y haz clic en **Update from Git**: Fabric descarga los cambios de la rama `dev` y actualiza los ítems del workspace. La actualización es manual en esta demo a propósito, para que quede claro el modelo mental; si quisieras automatizarla, la API de Fabric expone un endpoint para ello, aunque eso está fuera del alcance de este módulo.
+Abre ADO, crea un **Pull Request** desde `feature/prueba-notebook` hacia `dev` y complétalo (puedes aprobarlo tú mismo si eres el único revisor). 
 
-*(captura pendiente: assets/04-branch-out.png)*
+![ado-pr](../assets/04-ado-pr.png)
+
+Una vez que el PR hace merge, vuelve al workspace **GFD_DEV**, abre **Source control** y haz clic en **Update from Git**: Fabric descarga los cambios de la rama `dev` y actualiza los ítems del workspace. La actualización es manual en esta demo a propósito, para que quede claro el modelo mental; si quisieras automatizarla, la API de Fabric expone un endpoint para ello, aunque eso está fuera del alcance de este módulo.
+
+![branch-out](../assets/04-branch-out.png)
 
 ---
 
@@ -109,14 +117,11 @@ Abre ADO, crea un **Pull Request** desde `feature/prueba-notebook` hacia `dev` y
 
 Las políticas de rama de ADO evitan que alguien publique directamente en `pro` sin pasar por un pull request revisado. Ve a **Repos > Branches**, localiza la rama `pro` y haz clic en los tres puntos a su derecha > **Branch policies**.
 
-Activa al menos estas dos políticas:
+Activa al menos esta política:
 
 - **Require a minimum number of reviewers** — pon el mínimo en **1**. En un equipo real usa al menos 2; para la demo con un único contribuidor puedes marcar "Allow requestors to approve their own changes" como excepción.
-- **Build validation** — haz clic en **+ Add build policy**, selecciona el pipeline `azure-pipelines-ci.yml` (que importarás desde `pipelines/azure-pipelines-ci.yml` en el módulo 07) y déjalo en modo **Required**. El pipeline ejecuta `deploy/validate.py`, que comprueba la coherencia del `parameter.yml` y la estructura de los ítems antes de permitir el merge.
 
-> **Nota:** el pipeline de CI aún no existe en ADO en este momento; vuelve a esta sección tras el módulo 07 para activar la build validation.
-
-*(captura pendiente: assets/04-branch-policies.png)*
+![branch-policies](../assets/04-branch-policies.png)
 
 ---
 
