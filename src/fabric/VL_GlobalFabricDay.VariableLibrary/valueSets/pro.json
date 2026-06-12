@@ -5,6 +5,14 @@
     {
       "name": "FABRIC_ENV",
       "value": "PRO"
+    },
+    {
+      "name": "WORKSPACE_ID",
+      "value": "6b2d8c5d-8eb6-4b89-8f9e-5cfc82bdf2bb"
+    },
+    {
+      "name": "LAKEHOUSE_ID",
+      "value": "1546a512-5301-4200-a7e8-774ac7cba230"
     }
   ]
 }
