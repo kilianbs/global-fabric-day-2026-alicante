@@ -1,105 +1,59 @@
-trigger: none # solo ejecución manual, nunca automática
+# Camino 3 — Deploy selectivo.
+# Pipeline manual (sin trigger): se indican los items concretos a desplegar,
+# separados por comas, con el formato <Nombre>.<Tipo>.
+trigger: none
 
 parameters:
-  - name: target_env
-    displayName: "Entorno destino"
-    type: string
-    default: pre
-    values:
-      - pre
-      - main
-
   - name: items_to_deploy
-    displayName: 'Items a desplegar (separados por comas)'
+    displayName: 'Items a desplegar (separados por comas, formato Nombre.Tipo)'
     type: string
-    default: 'NB_DefaultLakehouse.Notebook'
+    default: 'NB_SetDefaultLakehouse.Notebook'
 
   - name: items_in_scope
-    displayName: Enter Fabric items to be deployed
+    displayName: Tipos de items de Fabric en alcance
     type: string
-    default: '["Notebook","DataPipeline","Lakehouse","SemanticModel","Report","VariableLibrary"]'
+    default: '["Lakehouse","VariableLibrary","Notebook","DataPipeline","SemanticModel","Report"]'
 
 variables:
   - group: fabric_cicd_group_sensitive
   - group: fabric_cicd_group_non_sensitive
 
 stages:
-  - stage: DeploySelectivePre
-    displayName: "Selective deploy → PRE"
-    condition:  eq('${{ parameters.target_env }}', 'pre')
-    jobs:
-      - deployment: Deployment
-        displayName: "Deploy selected items to PRE"
-        environment: pre
-        pool:
-          name: Azure Pipelines
-        strategy:
-          runOnce:
-            deploy:
-              steps:
-                # Step 1: Checkout the source code
-                - checkout: self
-                # Step 2: Set up Python 3.12
-                - task: UsePythonVersion@0
-                  inputs:
-                    versionSpec: '3.12'
-                    addToPath: true
-                  displayName: "Set up Python Environment"
-                # Step 3: Install dependencies
-                - script: |
-                    python -m pip install --upgrade pip
-                    pip install fabric-cicd 
-                  displayName: "Install Fabric CICD Library"
-                # Step 4: Run the deployment script
-                - task: PythonScript@0
-                  inputs:
-                    scriptSource: filePath
-                    scriptPath: '.deploy/deploy-to-fabric-selective.py'
-                    arguments: >-
-                      --aztenantid $(pre-aztenantid)
-                      --azclientid $(pre-azclientid)
-                      --azspsecret $(pre-azspsecret)
-                      --items_in_scope "${{ parameters.items_in_scope }}"
-                      --target_env pre
-                      --items_to_deploy "${{ parameters.items_to_deploy }}"
-                  displayName: 'Selective deploy via fabric-cicd'
-
-  - stage: DeployMain
-    displayName: "Selective deploy → PRO"
-    condition:  eq('${{ parameters.target_env }}', 'main')
+  - stage: DeploySelectivePro
+    displayName: "Selective deploy to PRO"
     jobs:
       - deployment: Deployment
         displayName: "Deploy selected items to PRO"
-        environment: main
+        environment: pro
         pool:
-          name: Azure Pipelines
+          vmImage: windows-latest
         strategy:
           runOnce:
             deploy:
               steps:
-                # Step 1: Checkout the source code
+                # Step 1: Checkout del codigo
                 - checkout: self
-                # Step 2: Set up Python 3.12
+                # Step 2: Python 3.12
                 - task: UsePythonVersion@0
                   inputs:
                     versionSpec: '3.12'
                     addToPath: true
                   displayName: "Set up Python Environment"
-                # Step 3: Install dependencies
+                # Step 3: Dependencias
                 - script: |
                     python -m pip install --upgrade pip
-                    pip install fabric-cicd 
+                    pip install fabric-cicd
                   displayName: "Install Fabric CICD Library"
-                # Step 4: Run the deployment script
+                # Step 4: Despliegue selectivo
                 - task: PythonScript@0
                   inputs:
                     scriptSource: filePath
-                    scriptPath: '.deploy/deploy-to-fabric-selective.py'
+                    scriptPath: 'deploy/deploy-to-fabric-selective.py'
                     arguments: >-
                       --aztenantid $(pro-aztenantid)
                       --azclientid $(pro-azclientid)
                       --azspsecret $(pro-azspsecret)
                       --items_in_scope "${{ parameters.items_in_scope }}"
-                      --target_env main
+                      --target_env pro
                       --items_to_deploy "${{ parameters.items_to_deploy }}"
                   displayName: 'Selective deploy via fabric-cicd'
