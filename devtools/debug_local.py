@@ -42,9 +42,9 @@ token_credential = AzureCliCredential()
 # token_credential = AzurePowerShellCredential()
 
 # Uncomment to use SPN auth
-client_id = "c8788173-c3b6-442b-9564-a9ce4178ee2c"
-client_secret = "EcT8Q~nS0cBSSWdsDs2G46z4mqJuar1jEJg64aNM"
-tenant_id = "8b2400ec-dd73-410b-a73c-d4beab4d3c71"
+client_id = ""
+client_secret = ""
+tenant_id = ""
 token_credential = ClientSecretCredential(client_id=client_id, client_secret=client_secret, tenant_id=tenant_id)
 
 constants.DEFAULT_API_ROOT_URL = "https://msitapi.fabric.microsoft.com"
